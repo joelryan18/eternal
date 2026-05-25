@@ -1,1 +1,2058 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SmartAttend – Smart Curriculum Activity & Attendance App | SJEC</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: { sans: ['Inter','sans-serif'], display: ['Space Grotesk','sans-serif'] },
+          colors: {
+            primary: { 50:'#eef4ff',100:'#dbe7ff',500:'#3b6ef5',600:'#2553e0',700:'#1c41b8',900:'#0c1b4d' },
+            accent: '#22d3ee'
+          },
+          animation: {
+            'fade-up':'fadeUp 0.7s ease-out','float':'float 6s ease-in-out infinite','blob':'blob 14s ease-in-out infinite'
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    html{scroll-behavior:smooth}body{-webkit-font-smoothing:antialiased}
+    @keyframes fadeUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+    @keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-12px)}}
+    @keyframes blob{0%,100%{transform:translate(0,0) scale(1)}33%{transform:translate(30px,-50px) scale(1.1)}66%{transform:translate(-20px,20px) scale(0.95)}}
+    @keyframes pulseRing{0%{box-shadow:0 0 0 0 rgba(59,110,245,.4)}70%{box-shadow:0 0 0 18px rgba(59,110,245,0)}100%{box-shadow:0 0 0 0 rgba(59,110,245,0)}}
+    .pulse-ring{animation:pulseRing 2s infinite}
+    ::-webkit-scrollbar{width:10px;height:10px}::-webkit-scrollbar-track{background:#f1f5f9}::-webkit-scrollbar-thumb{background:#cbd5e1;border-radius:8px}::-webkit-scrollbar-thumb:hover{background:#94a3b8}
+    .sidebar-link{display:flex;align-items:center;gap:.75rem;padding:.65rem .9rem;border-radius:.75rem;color:#cbd5e1;font-size:.9rem;font-weight:500;transition:all .2s;cursor:pointer}
+    .sidebar-link:hover{background:rgba(255,255,255,.06);color:#fff}
+    .sidebar-link.active{background:linear-gradient(90deg,rgba(59,110,245,.35),rgba(34,211,238,.15));color:#fff;box-shadow:inset 3px 0 0 #22d3ee}
+    .sidebar-link i{width:20px;text-align:center}
+    .stat-card{background:white;border-radius:1rem;padding:1.25rem;border:1px solid #e2e8f0;transition:all .2s}
+    .stat-card:hover{transform:translateY(-2px);box-shadow:0 10px 30px rgba(0,0,0,.05)}
+    .table-row:hover{background:#f8fafc}
+    .qr-frame{position:relative;width:280px;height:280px;border:2px dashed #94a3b8;border-radius:1rem;display:flex;align-items:center;justify-content:center;overflow:hidden;background:linear-gradient(135deg,#f0f9ff,#f8fafc)}
+    .qr-scanline{position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,transparent,#22d3ee,transparent);animation:scan 2.4s linear infinite;box-shadow:0 0 20px #22d3ee}
+    @keyframes scan{0%{top:0%}50%{top:95%}100%{top:0%}}
+    .finger-pulse{width:180px;height:180px;border-radius:50%;background:radial-gradient(circle,rgba(59,110,245,.15),transparent 70%);display:flex;align-items:center;justify-content:center;animation:pulseRing 2.2s infinite}
+    .toast{position:fixed;bottom:24px;right:24px;z-index:9999;padding:12px 18px;border-radius:12px;background:#0f172a;color:white;box-shadow:0 10px 30px rgba(0,0,0,.2);display:flex;align-items:center;gap:10px;transform:translateY(100px);opacity:0;transition:all .35s ease}
+    .toast.show{transform:translateY(0);opacity:1}
+    .toast.success{background:#059669}.toast.error{background:#dc2626}
+    @media print{.no-print{display:none!important}}
+    .page{min-height:100vh}
+    .role-tab.active{background:white;color:#1c41b8;box-shadow:0 1px 3px rgba(0,0,0,.06)}
+  </style>
+</head>
+<body class="font-sans bg-white text-slate-800 antialiased">
+
+<!-- ===================== LANDING PAGE ===================== -->
+<div id="page-landing" class="page">
+  <nav id="navbar" class="fixed top-0 inset-x-0 z-50 transition-all duration-300 bg-white/80 backdrop-blur-lg border-b border-slate-200/60">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex items-center justify-between h-16">
+        <a href="#" class="flex items-center gap-2 group">
+          <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-primary-500 to-accent flex items-center justify-center shadow-lg shadow-primary-500/30 group-hover:scale-105 transition">
+            <i class="fa-solid fa-graduation-cap text-white text-lg"></i>
+          </div>
+          <div><div class="font-display font-bold text-lg leading-none text-primary-900">SmartAttend</div><div class="text-[10px] text-slate-500 tracking-wider uppercase">SJEC · ECE</div></div>
+        </a>
+        <div class="hidden md:flex items-center gap-8 text-sm font-medium">
+          <a href="#features" class="hover:text-primary-600 transition">Features</a>
+          <a href="#how" class="hover:text-primary-600 transition">How it works</a>
+          <a href="#team" class="hover:text-primary-600 transition">Team</a>
+          <a onclick="showPage('login')" class="hover:text-primary-600 transition cursor-pointer">Login</a>
+          <a onclick="showPage('login')" class="px-4 py-2 rounded-lg bg-primary-600 text-white hover:bg-primary-700 shadow-md shadow-primary-500/30 transition cursor-pointer">Get Started <i class="fa-solid fa-arrow-right ml-1 text-xs"></i></a>
+        </div>
+        <button id="landMobileBtn" class="md:hidden p-2 rounded-lg hover:bg-slate-100"><i class="fa-solid fa-bars text-lg"></i></button>
+      </div>
+      <div id="landMobileMenu" class="hidden md:hidden pb-4 space-y-2 text-sm">
+        <a href="#features" class="block px-3 py-2 rounded-lg hover:bg-slate-100">Features</a>
+        <a href="#how" class="block px-3 py-2 rounded-lg hover:bg-slate-100">How it works</a>
+        <a href="#team" class="block px-3 py-2 rounded-lg hover:bg-slate-100">Team</a>
+        <a onclick="showPage('login')" class="block px-3 py-2 rounded-lg bg-primary-600 text-white text-center cursor-pointer">Login</a>
+      </div>
+    </div>
+  </nav>
+
+  <header class="relative pt-32 pb-24 overflow-hidden bg-gradient-to-br from-primary-50 via-white to-cyan-50">
+    <div class="absolute -top-32 -left-32 w-96 h-96 bg-primary-200 rounded-full mix-blend-multiply filter blur-3xl opacity-50 animate-blob"></div>
+    <div class="absolute top-20 -right-20 w-96 h-96 bg-cyan-200 rounded-full mix-blend-multiply filter blur-3xl opacity-50 animate-blob" style="animation-delay:4s"></div>
+    <div class="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 grid lg:grid-cols-2 gap-12 items-center">
+      <div class="animate-fade-up">
+        <span class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white border border-primary-200 text-primary-700 text-xs font-semibold shadow-sm"><span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>SDG 4 · Quality Education  ·  SDG 9 · Innovation</span>
+        <h1 class="mt-5 font-display font-bold text-4xl sm:text-5xl lg:text-6xl leading-tight text-primary-900">Smart Curriculum,<br/><span class="bg-gradient-to-r from-primary-600 to-accent bg-clip-text text-transparent">Smarter Attendance.</span></h1>
+        <p class="mt-6 text-lg text-slate-600 max-w-xl leading-relaxed">An all-in-one platform that automates classroom attendance through <b>QR, face recognition & fingerprint</b>, while guiding students to use free periods productively.</p>
+        <div class="mt-8 flex flex-wrap gap-4">
+          <a onclick="showPage('login')" class="px-6 py-3 rounded-xl bg-primary-600 text-white font-semibold hover:bg-primary-700 shadow-xl shadow-primary-500/30 transition transform hover:-translate-y-0.5 cursor-pointer"><i class="fa-solid fa-rocket mr-2"></i> Launch Dashboard</a>
+          <a href="#how" class="px-6 py-3 rounded-xl bg-white border border-slate-200 font-semibold hover:border-primary-300 hover:text-primary-700 transition"><i class="fa-solid fa-circle-play mr-2 text-primary-500"></i> See How It Works</a>
+        </div>
+        <div class="mt-10 grid grid-cols-3 gap-6 max-w-md">
+          <div><div class="font-display text-3xl font-bold text-primary-900">95%</div><div class="text-xs text-slate-500 mt-1">Time saved per class</div></div>
+          <div><div class="font-display text-3xl font-bold text-primary-900">3+</div><div class="text-xs text-slate-500 mt-1">Attendance modes</div></div>
+          <div><div class="font-display text-3xl font-bold text-primary-900">24/7</div><div class="text-xs text-slate-500 mt-1">Learning hub</div></div>
+        </div>
+      </div>
+      <div class="relative animate-fade-up" style="animation-delay:.15s">
+        <div class="absolute inset-0 bg-gradient-to-r from-primary-500 to-accent rounded-3xl rotate-6 opacity-20 blur-2xl"></div>
+        <div class="relative bg-white rounded-3xl shadow-2xl shadow-primary-500/10 border border-slate-100 p-6 animate-float">
+          <div class="flex items-center justify-between mb-5">
+            <div><div class="text-xs text-slate-400 font-semibold uppercase tracking-wider">Today's class</div><div class="font-display font-bold text-lg text-slate-800">Digital Signal Processing</div></div>
+            <div class="px-3 py-1 rounded-full bg-emerald-50 text-emerald-600 text-xs font-bold">LIVE</div>
+          </div>
+          <div class="grid grid-cols-5 gap-1 p-4 bg-slate-50 rounded-2xl border border-dashed border-slate-200" id="qrMockGrid"></div>
+          <div class="mt-4 text-center text-xs text-slate-500">Scan to mark attendance · expires in <b class="text-primary-600">02:45</b></div>
+          <div class="mt-5 grid grid-cols-3 gap-3 text-center">
+            <div class="p-3 rounded-xl bg-primary-50 border border-primary-100"><i class="fa-solid fa-qrcode text-primary-600"></i><div class="text-[11px] font-semibold mt-1">QR Code</div></div>
+            <div class="p-3 rounded-xl bg-cyan-50 border border-cyan-100"><i class="fa-solid fa-face-smile text-cyan-600"></i><div class="text-[11px] font-semibold mt-1">Face ID</div></div>
+            <div class="p-3 rounded-xl bg-violet-50 border border-violet-100"><i class="fa-solid fa-fingerprint text-violet-600"></i><div class="text-[11px] font-semibold mt-1">Biometric</div></div>
+          </div>
+        </div>
+        <div class="hidden sm:flex absolute -bottom-6 -left-6 bg-white px-4 py-3 rounded-2xl shadow-xl border border-slate-100 items-center gap-3 animate-float" style="animation-delay:2s">
+          <div class="w-10 h-10 rounded-full bg-emerald-100 flex items-center justify-center"><i class="fa-solid fa-check text-emerald-600"></i></div>
+          <div><div class="font-semibold text-sm">Attendance marked</div><div class="text-xs text-slate-500">42 / 45 students</div></div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <section id="features" class="py-24 bg-white">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="text-center max-w-2xl mx-auto">
+        <span class="text-primary-600 font-semibold text-sm uppercase tracking-wider">Core Features</span>
+        <h2 class="font-display text-3xl sm:text-4xl font-bold text-primary-900 mt-2">Everything your classroom needs</h2>
+        <p class="text-slate-600 mt-4">One platform combining attendance, timetable & student productivity — built for the modern campus.</p>
+      </div>
+      <div class="mt-14 grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div class="group p-7 rounded-2xl border border-slate-100 hover:border-primary-200 hover:shadow-xl hover:shadow-primary-500/5 transition bg-gradient-to-br from-white to-primary-50/30"><div class="w-12 h-12 rounded-xl bg-primary-600 text-white flex items-center justify-center shadow-lg shadow-primary-500/30 group-hover:scale-110 transition"><i class="fa-solid fa-qrcode text-xl"></i></div><h3 class="font-display font-bold text-lg mt-5">QR Code Attendance</h3><p class="text-slate-600 text-sm mt-2 leading-relaxed">Dynamic QR codes generated every class, expiring within minutes to prevent proxy attendance.</p></div>
+        <div class="group p-7 rounded-2xl border border-slate-100 hover:border-cyan-200 hover:shadow-xl hover:shadow-cyan-500/5 transition bg-gradient-to-br from-white to-cyan-50/30"><div class="w-12 h-12 rounded-xl bg-cyan-500 text-white flex items-center justify-center shadow-lg shadow-cyan-500/30 group-hover:scale-110 transition"><i class="fa-solid fa-face-smile text-xl"></i></div><h3 class="font-display font-bold text-lg mt-5">Face Recognition</h3><p class="text-slate-600 text-sm mt-2 leading-relaxed">Computer-vision powered face detection that marks attendance instantly when students walk in.</p></div>
+        <div class="group p-7 rounded-2xl border border-slate-100 hover:border-violet-200 hover:shadow-xl hover:shadow-violet-500/5 transition bg-gradient-to-br from-white to-violet-50/30"><div class="w-12 h-12 rounded-xl bg-violet-500 text-white flex items-center justify-center shadow-lg shadow-violet-500/30 group-hover:scale-110 transition"><i class="fa-solid fa-fingerprint text-xl"></i></div><h3 class="font-display font-bold text-lg mt-5">Fingerprint Biometric</h3><p class="text-slate-600 text-sm mt-2 leading-relaxed">Tamper-proof fingerprint scanner integration for the most secure attendance verification.</p></div>
+        <div class="group p-7 rounded-2xl border border-slate-100 hover:border-emerald-200 hover:shadow-xl hover:shadow-emerald-500/5 transition bg-gradient-to-br from-white to-emerald-50/30"><div class="w-12 h-12 rounded-xl bg-emerald-500 text-white flex items-center justify-center shadow-lg shadow-emerald-500/30 group-hover:scale-110 transition"><i class="fa-solid fa-lightbulb text-xl"></i></div><h3 class="font-display font-bold text-lg mt-5">Productivity Hub</h3><p class="text-slate-600 text-sm mt-2 leading-relaxed">During free periods, get personalized suggestions — coding tasks, aptitude tests, MOOCs & career skills.</p></div>
+        <div class="group p-7 rounded-2xl border border-slate-100 hover:border-orange-200 hover:shadow-xl hover:shadow-orange-500/5 transition bg-gradient-to-br from-white to-orange-50/30"><div class="w-12 h-12 rounded-xl bg-orange-500 text-white flex items-center justify-center shadow-lg shadow-orange-500/30 group-hover:scale-110 transition"><i class="fa-solid fa-calendar-days text-xl"></i></div><h3 class="font-display font-bold text-lg mt-5">Smart Timetable</h3><p class="text-slate-600 text-sm mt-2 leading-relaxed">Auto-synced timetable with real-time updates, free-slot detection & rescheduling alerts.</p></div>
+        <div class="group p-7 rounded-2xl border border-slate-100 hover:border-rose-200 hover:shadow-xl hover:shadow-rose-500/5 transition bg-gradient-to-br from-white to-rose-50/30"><div class="w-12 h-12 rounded-xl bg-rose-500 text-white flex items-center justify-center shadow-lg shadow-rose-500/30 group-hover:scale-110 transition"><i class="fa-solid fa-bell text-xl"></i></div><h3 class="font-display font-bold text-lg mt-5">Faculty Notifications</h3><p class="text-slate-600 text-sm mt-2 leading-relaxed">Faculty can mark unavailability; free faculty can claim slots — students get instant push alerts.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="how" class="py-24 bg-gradient-to-br from-primary-900 via-primary-700 to-primary-900 text-white relative overflow-hidden">
+    <div class="absolute inset-0 opacity-10" style="background-image:radial-gradient(circle at 1px 1px, white 1px, transparent 0);background-size:32px 32px;"></div>
+    <div class="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="text-center max-w-2xl mx-auto"><span class="text-cyan-300 font-semibold text-sm uppercase tracking-wider">Methodology</span><h2 class="font-display text-3xl sm:text-4xl font-bold mt-2">How SmartAttend Works</h2><p class="text-primary-100 mt-4">Six clean steps from data to a fully working classroom companion.</p></div>
+      <div class="mt-16 grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div class="p-6 rounded-2xl bg-white/5 border border-white/10 backdrop-blur-sm hover:bg-white/10 transition"><div class="text-cyan-300 font-display text-4xl font-bold">01</div><h4 class="font-semibold mt-3">Understand Problems</h4><p class="text-primary-100 text-sm mt-2">Identify pain points in manual attendance & free-period management.</p></div>
+        <div class="p-6 rounded-2xl bg-white/5 border border-white/10 backdrop-blur-sm hover:bg-white/10 transition"><div class="text-cyan-300 font-display text-4xl font-bold">02</div><h4 class="font-semibold mt-3">Collect Data</h4><p class="text-primary-100 text-sm mt-2">Aggregate timetables, student records & attendance history.</p></div>
+        <div class="p-6 rounded-2xl bg-white/5 border border-white/10 backdrop-blur-sm hover:bg-white/10 transition"><div class="text-cyan-300 font-display text-4xl font-bold">03</div><h4 class="font-semibold mt-3">Build Attendance System</h4><p class="text-primary-100 text-sm mt-2">Implement QR / face / fingerprint based attendance pipelines.</p></div>
+        <div class="p-6 rounded-2xl bg-white/5 border border-white/10 backdrop-blur-sm hover:bg-white/10 transition"><div class="text-cyan-300 font-display text-4xl font-bold">04</div><h4 class="font-semibold mt-3">Suggest Tasks</h4><p class="text-primary-100 text-sm mt-2">Recommend coding, aptitude, MOOCs & personalized study plans.</p></div>
+        <div class="p-6 rounded-2xl bg-white/5 border border-white/10 backdrop-blur-sm hover:bg-white/10 transition"><div class="text-cyan-300 font-display text-4xl font-bold">05</div><h4 class="font-semibold mt-3">Integrate Everything</h4><p class="text-primary-100 text-sm mt-2">Combine attendance, timetable & student goals in one dashboard.</p></div>
+        <div class="p-6 rounded-2xl bg-white/5 border border-white/10 backdrop-blur-sm hover:bg-white/10 transition"><div class="text-cyan-300 font-display text-4xl font-bold">06</div><h4 class="font-semibold mt-3">Test & Deploy</h4><p class="text-primary-100 text-sm mt-2">Validate workflows & roll out to faculty and students.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="team" class="py-24 bg-slate-50">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="text-center max-w-2xl mx-auto"><span class="text-primary-600 font-semibold text-sm uppercase tracking-wider">Team '_'</span><h2 class="font-display text-3xl sm:text-4xl font-bold text-primary-900 mt-2">Built by future ECE engineers</h2><p class="text-slate-600 mt-4">4<sup>th</sup> Semester · Section A · Electronics & Communication Engineering · St Joseph Engineering College, Mangaluru</p></div>
+      <div class="mt-14 grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div class="group bg-white rounded-2xl p-6 text-center border border-slate-100 hover:border-primary-300 hover:shadow-xl transition"><div class="w-24 h-24 mx-auto rounded-full bg-gradient-to-br from-primary-400 to-cyan-400 flex items-center justify-center text-white font-display font-bold text-2xl shadow-lg group-hover:scale-105 transition">AF</div><h4 class="font-display font-bold mt-4">Alisa Carisma Fernandes</h4><p class="text-xs text-slate-500 mt-1 font-mono">4SO24EC007</p><div class="mt-3 inline-flex items-center gap-1 px-2 py-1 rounded-full bg-primary-50 text-primary-700 text-[10px] font-bold uppercase tracking-wider">Team Lead</div></div>
+        <div class="group bg-white rounded-2xl p-6 text-center border border-slate-100 hover:border-primary-300 hover:shadow-xl transition"><div class="w-24 h-24 mx-auto rounded-full bg-gradient-to-br from-rose-400 to-orange-400 flex items-center justify-center text-white font-display font-bold text-2xl shadow-lg group-hover:scale-105 transition">AM</div><h4 class="font-display font-bold mt-4">Apoorva Monteiro</h4><p class="text-xs text-slate-500 mt-1 font-mono">4SO24EC010</p><div class="mt-3 inline-flex items-center gap-1 px-2 py-1 rounded-full bg-slate-100 text-slate-600 text-[10px] font-bold uppercase tracking-wider">Developer</div></div>
+        <div class="group bg-white rounded-2xl p-6 text-center border border-slate-100 hover:border-primary-300 hover:shadow-xl transition"><div class="w-24 h-24 mx-auto rounded-full bg-gradient-to-br from-emerald-400 to-teal-400 flex items-center justify-center text-white font-display font-bold text-2xl shadow-lg group-hover:scale-105 transition">FM</div><h4 class="font-display font-bold mt-4">F Manasvi</h4><p class="text-xs text-slate-500 mt-1 font-mono">4SO24EC035</p><div class="mt-3 inline-flex items-center gap-1 px-2 py-1 rounded-full bg-slate-100 text-slate-600 text-[10px] font-bold uppercase tracking-wider">Designer</div></div>
+        <div class="group bg-white rounded-2xl p-6 text-center border border-slate-100 hover:border-primary-300 hover:shadow-xl transition"><div class="w-24 h-24 mx-auto rounded-full bg-gradient-to-br from-violet-400 to-purple-400 flex items-center justify-center text-white font-display font-bold text-2xl shadow-lg group-hover:scale-105 transition">AM</div><h4 class="font-display font-bold mt-4">Ashwin Madtha</h4><p class="text-xs text-slate-500 mt-1 font-mono">4SO24EC017</p><div class="mt-3 inline-flex items-center gap-1 px-2 py-1 rounded-full bg-slate-100 text-slate-600 text-[10px] font-bold uppercase tracking-wider">Tester</div></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="py-20 bg-white">
+    <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="rounded-3xl bg-gradient-to-br from-primary-600 via-primary-700 to-primary-900 p-10 sm:p-14 text-white relative overflow-hidden">
+        <div class="absolute -top-20 -right-20 w-72 h-72 bg-cyan-400 opacity-20 rounded-full blur-3xl"></div>
+        <div class="absolute -bottom-20 -left-20 w-72 h-72 bg-primary-400 opacity-20 rounded-full blur-3xl"></div>
+        <div class="relative">
+          <h3 class="font-display text-3xl sm:text-4xl font-bold">Ready to transform your classroom?</h3>
+          <p class="mt-3 text-primary-100 max-w-xl">Login as a student or faculty to experience the full dashboard — attendance, timetable, productivity & analytics in one place.</p>
+          <div class="mt-7 flex flex-wrap gap-4">
+            <a onclick="showPage('login')" class="px-6 py-3 rounded-xl bg-white text-primary-700 font-bold hover:bg-primary-50 transition shadow-xl cursor-pointer"><i class="fa-solid fa-user-graduate mr-2"></i> Student Login</a>
+            <a onclick="showPage('login')" class="px-6 py-3 rounded-xl bg-white/10 border border-white/30 backdrop-blur text-white font-bold hover:bg-white/20 transition cursor-pointer"><i class="fa-solid fa-chalkboard-user mr-2"></i> Faculty Login</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <footer class="bg-slate-900 text-slate-400 py-12">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 grid md:grid-cols-4 gap-8">
+      <div><div class="flex items-center gap-2 mb-4"><div class="w-10 h-10 rounded-xl bg-gradient-to-br from-primary-500 to-accent flex items-center justify-center"><i class="fa-solid fa-graduation-cap text-white"></i></div><div class="font-display font-bold text-white text-lg">SmartAttend</div></div><p class="text-sm leading-relaxed">Smart Curriculum Activity & Attendance App — Team '_' project for Computational Tools for Engineers (22CTE48).</p></div>
+      <div><h5 class="text-white font-semibold mb-3 text-sm uppercase tracking-wider">Quick Links</h5><ul class="space-y-2 text-sm"><li><a href="#features" class="hover:text-white">Features</a></li><li><a href="#how" class="hover:text-white">Methodology</a></li><li><a href="#team" class="hover:text-white">Team</a></li><li><a onclick="showPage('login')" class="hover:text-white cursor-pointer">Login</a></li></ul></div>
+      <div><h5 class="text-white font-semibold mb-3 text-sm uppercase tracking-wider">Institution</h5><ul class="space-y-2 text-sm"><li>St Joseph Engineering College</li><li>Vamanjoor, Mangaluru</li><li>An Autonomous Institution</li><li>Dept. of ECE · 4<sup>th</sup> Sem A</li></ul></div>
+      <div><h5 class="text-white font-semibold mb-3 text-sm uppercase tracking-wider">Aligned with</h5><div class="flex flex-wrap gap-2 text-xs"><span class="px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">SDG 4</span><span class="px-3 py-1 rounded-full bg-orange-500/20 text-orange-300 border border-orange-500/30">SDG 9</span></div></div>
+    </div>
+    <div class="max-w-7xl mx-auto px-4 mt-10 pt-6 border-t border-slate-800 text-xs flex flex-col sm:flex-row justify-between gap-3">
+      <div>© 2025 Team '_' · St Joseph Engineering College, Mangaluru</div>
+      <div>Built with ❤️ for Computational Tools for Engineers · 22CTE48</div>
+    </div>
+  </footer>
+</div><!-- /page-landing -->
+
+<!-- ===================== LOGIN PAGE ===================== -->
+<div id="page-login" class="page hidden">
+  <div class="fixed -top-32 -left-32 w-96 h-96 bg-primary-200 rounded-full mix-blend-multiply filter blur-3xl opacity-50"></div>
+  <div class="fixed -bottom-32 -right-32 w-96 h-96 bg-cyan-200 rounded-full mix-blend-multiply filter blur-3xl opacity-50"></div>
+  <div class="min-h-screen bg-gradient-to-br from-primary-50 via-white to-cyan-50 flex items-center justify-center p-4">
+    <div class="relative w-full max-w-5xl grid lg:grid-cols-2 bg-white rounded-3xl shadow-2xl overflow-hidden">
+      <div class="hidden lg:flex flex-col justify-between p-10 bg-gradient-to-br from-primary-700 via-primary-900 to-primary-900 text-white relative overflow-hidden">
+        <div class="absolute inset-0 opacity-10" style="background-image:radial-gradient(circle at 1px 1px, white 1px, transparent 0);background-size:28px 28px;"></div>
+        <div class="relative"><a onclick="showPage('landing')" class="inline-flex items-center gap-2 cursor-pointer"><div class="w-11 h-11 rounded-xl bg-white/15 backdrop-blur flex items-center justify-center"><i class="fa-solid fa-graduation-cap"></i></div><div><div class="font-display font-bold text-lg leading-none">SmartAttend</div><div class="text-[10px] text-primary-200 uppercase tracking-wider">SJEC · ECE</div></div></a></div>
+        <div class="relative"><h2 class="font-display text-3xl font-bold leading-tight">Welcome back to your smart classroom.</h2><p class="text-primary-100 mt-3 text-sm leading-relaxed">Attendance · Timetable · Productivity — all in one place. Built with ❤️ by Team '_'.</p><div class="mt-8 space-y-3"><div class="flex items-center gap-3 text-sm"><div class="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center"><i class="fa-solid fa-qrcode"></i></div>Instant QR attendance</div><div class="flex items-center gap-3 text-sm"><div class="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center"><i class="fa-solid fa-lightbulb"></i></div>Personalised free-period activities</div><div class="flex items-center gap-3 text-sm"><div class="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center"><i class="fa-solid fa-chart-line"></i></div>Live attendance analytics</div></div></div>
+        <div class="relative text-xs text-primary-200">St Joseph Engineering College · Autonomous · Mangaluru</div>
+      </div>
+      <div class="p-8 sm:p-12 flex flex-col justify-center">
+        <a onclick="showPage('landing')" class="lg:hidden inline-flex items-center gap-2 mb-6 cursor-pointer"><div class="w-10 h-10 rounded-xl bg-gradient-to-br from-primary-500 to-accent flex items-center justify-center"><i class="fa-solid fa-graduation-cap text-white"></i></div><span class="font-display font-bold text-lg text-primary-900">SmartAttend</span></a>
+        <h1 class="font-display text-2xl sm:text-3xl font-bold text-primary-900">Sign in</h1>
+        <p class="text-slate-500 text-sm mt-1">Choose your role to continue</p>
+        <div class="mt-6 grid grid-cols-2 gap-2 p-1 bg-slate-100 rounded-xl">
+          <button id="tabStudent" class="role-tab active py-2.5 rounded-lg text-sm font-semibold transition"><i class="fa-solid fa-user-graduate mr-2"></i>Student</button>
+          <button id="tabFaculty" class="role-tab py-2.5 rounded-lg text-sm font-semibold transition text-slate-500"><i class="fa-solid fa-chalkboard-user mr-2"></i>Faculty</button>
+        </div>
+        <div class="mt-6 space-y-4">
+          <div><label class="text-xs font-semibold text-slate-600 uppercase tracking-wider" id="idLabel">USN / Student ID</label><div class="mt-1 relative"><i class="fa-solid fa-id-card absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"></i><input type="text" id="userId" value="4SO24EC007" class="w-full pl-10 pr-3 py-2.5 rounded-xl border border-slate-200 focus:border-primary-500 focus:ring-2 focus:ring-primary-200 outline-none transition" /></div></div>
+          <div><label class="text-xs font-semibold text-slate-600 uppercase tracking-wider">Password</label><div class="mt-1 relative"><i class="fa-solid fa-lock absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"></i><input type="password" id="password" value="demo123" class="w-full pl-10 pr-10 py-2.5 rounded-xl border border-slate-200 focus:border-primary-500 focus:ring-2 focus:ring-primary-200 outline-none transition" /><button type="button" id="togglePwd" class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700"><i class="fa-solid fa-eye"></i></button></div></div>
+          <div class="flex items-center justify-between text-sm"><label class="flex items-center gap-2"><input type="checkbox" class="rounded" checked> <span class="text-slate-600">Remember me</span></label><a href="#" class="text-primary-600 hover:underline">Forgot password?</a></div>
+          <button id="loginSubmit" class="w-full py-3 rounded-xl bg-primary-600 hover:bg-primary-700 text-white font-semibold shadow-lg shadow-primary-500/30 transition">Sign in <i class="fa-solid fa-arrow-right ml-2 text-xs"></i></button>
+          <div class="relative my-4"><div class="absolute inset-0 flex items-center"><div class="w-full border-t border-slate-200"></div></div><div class="relative text-center"><span class="bg-white px-3 text-xs text-slate-400 uppercase tracking-wider">Or</span></div></div>
+          <button id="biometricBtn" class="w-full py-3 rounded-xl bg-slate-50 border border-slate-200 hover:bg-slate-100 font-semibold text-slate-700 transition flex items-center justify-center gap-2"><i class="fa-solid fa-fingerprint text-violet-600"></i> Sign in with Biometric</button>
+        </div>
+        <p class="text-xs text-slate-400 text-center mt-6">Demo credentials are pre-filled. Just click <b>Sign in</b>.</p>
+      </div>
+    </div>
+  </div>
+</div><!-- /page-login -->
+
+<!-- ===================== STUDENT DASHBOARD ===================== -->
+<div id="page-student-dashboard" class="page hidden bg-slate-50">
+  <div class="flex">
+    <aside class="sidebar fixed lg:sticky top-0 inset-y-0 left-0 w-64 bg-gradient-to-b from-primary-900 via-primary-900 to-slate-900 text-white p-4 z-40 -translate-x-full lg:translate-x-0 transition-transform h-screen">
+      <a onclick="showPage('landing')" class="flex items-center gap-2 p-2 mb-6 cursor-pointer"><div class="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center"><i class="fa-solid fa-graduation-cap"></i></div><div><div class="font-display font-bold leading-none">SmartAttend</div><div class="text-[10px] text-primary-200 uppercase tracking-wider">Student Portal</div></div></a>
+      <nav class="space-y-1 sidebar-nav"></nav>
+      <div class="absolute bottom-4 left-4 right-4"><div class="p-3 rounded-xl bg-white/5 border border-white/10"><div class="flex items-center gap-3"><div class="w-10 h-10 rounded-full bg-gradient-to-br from-primary-400 to-cyan-400 flex items-center justify-center font-bold text-sm user-avatar">AF</div><div class="flex-1 min-w-0"><div class="font-semibold text-sm truncate user-name">User</div><div class="text-[10px] text-primary-200 truncate user-sub">ID</div></div></div><button onclick="SmartAttend.logout()" class="w-full mt-3 text-xs py-1.5 rounded-lg bg-white/10 hover:bg-white/20 transition"><i class="fa-solid fa-right-from-bracket mr-1"></i> Logout</button></div></div>
+    </aside>
+    <main class="flex-1 min-h-screen">
+      <!-- Top Header -->
+      <header class="sticky top-0 z-30 bg-white/80 backdrop-blur border-b border-slate-200 px-4 sm:px-6 py-3 flex items-center justify-between">
+        <div class="flex items-center gap-3">
+          <button class="menu-btn lg:hidden p-2 rounded-lg hover:bg-slate-100"><i class="fa-solid fa-bars"></i></button>
+          <div><h1 class="font-display font-bold text-lg sm:text-xl text-primary-900">My Dashboard</h1><p class="text-xs text-slate-500 date-label">—</p></div>
+        </div>
+        <div class="flex items-center gap-2">
+          <button onclick="showPage('notifications')" class="p-2 rounded-lg hover:bg-slate-100 relative"><i class="fa-solid fa-bell text-slate-600"></i><span class="absolute top-1 right-1 w-2 h-2 rounded-full bg-rose-500"></span></button>
+          <button onclick="showPage('reports')" class="hidden sm:flex items-center gap-2 px-3 py-2 rounded-lg bg-primary-50 text-primary-700 text-sm font-semibold hover:bg-primary-100 transition"><i class="fa-solid fa-chart-line"></i><span>My Reports</span></button>
+        </div>
+      </header>
+
+      <div class="p-4 sm:p-6 space-y-6">
+
+        <!-- Welcome Banner -->
+        <section class="rounded-2xl bg-gradient-to-br from-primary-600 via-primary-700 to-primary-900 text-white p-6 sm:p-8 relative overflow-hidden">
+          <div class="absolute -top-12 -right-12 w-48 h-48 bg-cyan-400/20 rounded-full blur-3xl pointer-events-none"></div>
+          <div class="absolute bottom-0 left-1/3 w-64 h-32 bg-primary-400/10 rounded-full blur-2xl pointer-events-none"></div>
+          <div class="relative flex flex-col sm:flex-row sm:items-center justify-between gap-6">
+            <div>
+              <p class="text-primary-200 text-sm font-medium" id="sdGreetingTime">Good morning</p>
+              <h2 class="font-display text-2xl sm:text-3xl font-bold mt-1">Hi, <span class="first-name">there</span> 👋</h2>
+              <p class="text-primary-100 mt-2 text-sm leading-relaxed">Next class: <b id="sdNextClass">—</b> · <b id="sdNextTime">—</b></p>
+              <div class="mt-5 flex flex-wrap gap-3">
+                <a onclick="showPage('attendance')" class="px-4 py-2 rounded-lg bg-white text-primary-700 text-sm font-semibold hover:bg-primary-50 transition cursor-pointer shadow-md"><i class="fa-solid fa-qrcode mr-2"></i>Mark Attendance</a>
+                <a onclick="showPage('productivity')" class="px-4 py-2 rounded-lg bg-white/10 border border-white/25 text-sm font-semibold hover:bg-white/20 transition cursor-pointer"><i class="fa-solid fa-lightbulb mr-2"></i>Free Period Hub</a>
+              </div>
+            </div>
+            <!-- Attendance Ring -->
+            <div class="flex-shrink-0 flex flex-col items-center gap-2">
+              <div class="relative w-28 h-28">
+                <svg class="w-28 h-28 -rotate-90" viewBox="0 0 112 112">
+                  <circle cx="56" cy="56" r="44" fill="none" stroke="rgba(255,255,255,0.15)" stroke-width="10"/>
+                  <circle cx="56" cy="56" r="44" fill="none" stroke="#22d3ee" stroke-width="10" stroke-linecap="round"
+                    stroke-dasharray="276.5" id="sdAttRing" stroke-dashoffset="276.5"/>
+                </svg>
+                <div class="absolute inset-0 flex flex-col items-center justify-center">
+                  <span class="font-display font-bold text-2xl" id="sdAttPct">84%</span>
+                  <span class="text-[10px] text-primary-200">Overall</span>
+                </div>
+              </div>
+              <span class="text-xs text-primary-200">75% required</span>
+            </div>
+          </div>
+        </section>
+
+        <!-- Stat Cards -->
+        <section class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          <div class="stat-card">
+            <div class="flex items-center justify-between">
+              <div class="w-10 h-10 rounded-lg flex items-center justify-center" style="background:#ecfdf5;color:#059669"><i class="fa-solid fa-check-double"></i></div>
+              <span class="text-xs font-semibold px-2 py-0.5 rounded-full" style="background:#d1fae5;color:#065f46">↑ 2.4%</span>
+            </div>
+            <div class="mt-4 font-display text-3xl font-bold text-primary-900" id="sdStatAtt">84%</div>
+            <div class="text-xs text-slate-500 mt-1">Overall Attendance</div>
+            <div style="width:100%;height:4px;background:#f1f5f9;border-radius:4px;margin-top:10px;overflow:hidden">
+              <div style="height:100%;background:#10b981;border-radius:4px" id="sdStatAttBar"></div>
+            </div>
+          </div>
+          <div class="stat-card">
+            <div class="flex items-center justify-between">
+              <div class="w-10 h-10 rounded-lg flex items-center justify-center" style="background:#eef4ff;color:#3b6ef5"><i class="fa-solid fa-calendar-check"></i></div>
+              <span class="text-xs text-slate-400 font-medium">today</span>
+            </div>
+            <div class="mt-4 font-display text-3xl font-bold text-primary-900" id="sdStatToday">5</div>
+            <div class="text-xs text-slate-500 mt-1">Classes Scheduled</div>
+            <div class="mt-3 text-[11px] text-slate-400" id="sdStatTodaySub">Mon · ECE-A</div>
+          </div>
+          <div class="stat-card">
+            <div class="flex items-center justify-between">
+              <div class="w-10 h-10 rounded-lg flex items-center justify-center" style="background:#f5f3ff;color:#7c3aed"><i class="fa-solid fa-lightbulb"></i></div>
+              <span class="text-xs font-semibold" style="color:#7c3aed">3 today</span>
+            </div>
+            <div class="mt-4 font-display text-3xl font-bold text-primary-900">14</div>
+            <div class="text-xs text-slate-500 mt-1">Activities Completed</div>
+            <div class="mt-3 text-[11px] text-slate-400">This semester</div>
+          </div>
+          <div class="stat-card">
+            <div class="flex items-center justify-between">
+              <div class="w-10 h-10 rounded-lg flex items-center justify-center" style="background:#fff7ed;color:#ea580c"><i class="fa-solid fa-fire"></i></div>
+              <span class="text-xs font-semibold" style="color:#ea580c">🔥 streak</span>
+            </div>
+            <div class="mt-4 font-display text-3xl font-bold text-primary-900">12</div>
+            <div class="text-xs text-slate-500 mt-1">Day Productive Streak</div>
+            <div class="mt-3 text-[11px] text-slate-400">Personal best: 18 days</div>
+          </div>
+        </section>
+
+        <!-- Chart + Today's Classes -->
+        <section class="grid lg:grid-cols-3 gap-6">
+          <div class="bg-white rounded-2xl border border-slate-100 p-6 lg:col-span-2">
+            <div class="flex items-center justify-between mb-4">
+              <div><h3 class="font-display font-bold">Weekly Attendance Trend</h3><p class="text-xs text-slate-500 mt-0.5">Classes attended vs scheduled · past 7 days</p></div>
+              <a onclick="showPage('reports')" class="text-xs text-primary-600 font-semibold hover:underline cursor-pointer">Full report →</a>
+            </div>
+            <div style="position:relative;height:220px"><canvas id="attendanceChart"></canvas></div>
+          </div>
+          <div class="bg-white rounded-2xl border border-slate-100 p-6 flex flex-col">
+            <div class="flex items-center justify-between mb-4">
+              <h3 class="font-display font-bold">Today's Classes</h3>
+              <a onclick="showPage('timetable')" class="text-xs text-primary-600 font-semibold hover:underline cursor-pointer">Timetable →</a>
+            </div>
+            <div class="space-y-2 flex-1 overflow-y-auto" id="todayClasses">
+              <div class="text-xs text-slate-400 text-center py-6">Loading…</div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Subjects + Suggestions -->
+        <section class="grid lg:grid-cols-2 gap-6">
+          <!-- Subject Attendance -->
+          <div class="bg-white rounded-2xl border border-slate-100 p-6">
+            <div class="flex items-center justify-between mb-4">
+              <h3 class="font-display font-bold">My Subjects</h3>
+              <a onclick="showPage('reports')" class="text-xs text-primary-600 font-semibold hover:underline cursor-pointer">Details →</a>
+            </div>
+            <div class="space-y-3" id="subjectList"></div>
+          </div>
+          <!-- Suggested Activities -->
+          <div class="bg-white rounded-2xl border border-slate-100 p-6">
+            <div class="flex items-center justify-between mb-4">
+              <h3 class="font-display font-bold">Suggested for Free Period</h3>
+              <a onclick="showPage('productivity')" class="text-xs text-primary-600 font-semibold hover:underline cursor-pointer">See all →</a>
+            </div>
+            <div class="space-y-3" id="suggestedActs"></div>
+          </div>
+        </section>
+
+      </div>
+    </main>
+  </div>
+</div><!-- /page-student-dashboard -->
+
+<!-- ===================== FACULTY DASHBOARD ===================== -->
+<div id="page-faculty-dashboard" class="page hidden bg-slate-50">
+  <div class="flex">
+    <aside class="sidebar fixed lg:sticky top-0 inset-y-0 left-0 w-64 bg-gradient-to-b from-primary-900 via-primary-900 to-slate-900 text-white p-4 z-40 -translate-x-full lg:translate-x-0 transition-transform h-screen">
+      <a onclick="showPage('landing')" class="flex items-center gap-2 p-2 mb-6 cursor-pointer"><div class="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center"><i class="fa-solid fa-graduation-cap"></i></div><div><div class="font-display font-bold leading-none">SmartAttend</div><div class="text-[10px] text-primary-200 uppercase tracking-wider">Faculty Portal</div></div></a>
+      <nav class="space-y-1 sidebar-nav"></nav>
+      <div class="absolute bottom-4 left-4 right-4"><div class="p-3 rounded-xl bg-white/5 border border-white/10"><div class="flex items-center gap-3"><div class="w-10 h-10 rounded-full bg-gradient-to-br from-orange-400 to-rose-400 flex items-center justify-center font-bold text-sm user-avatar">RP</div><div class="flex-1 min-w-0"><div class="font-semibold text-sm truncate user-name">Dr. Pai</div><div class="text-[10px] text-primary-200 truncate user-sub">ECE Dept</div></div></div><button onclick="SmartAttend.logout()" class="w-full mt-3 text-xs py-1.5 rounded-lg bg-white/10 hover:bg-white/20 transition"><i class="fa-solid fa-right-from-bracket mr-1"></i> Logout</button></div></div>
+    </aside>
+    <main class="flex-1 min-h-screen">
+      <!-- Header -->
+      <header class="sticky top-0 z-30 bg-white/80 backdrop-blur border-b border-slate-200 px-4 sm:px-6 py-3 flex items-center justify-between">
+        <div class="flex items-center gap-3">
+          <button class="menu-btn lg:hidden p-2 rounded-lg hover:bg-slate-100"><i class="fa-solid fa-bars"></i></button>
+          <div><h1 class="font-display font-bold text-lg sm:text-xl text-primary-900">Faculty Dashboard</h1><p class="text-xs text-slate-500 date-label">—</p></div>
+        </div>
+        <button onclick="showPage('notifications')" class="p-2 rounded-lg hover:bg-slate-100 relative"><i class="fa-solid fa-bell text-slate-600"></i><span class="absolute top-1 right-1 w-2 h-2 rounded-full bg-rose-500"></span></button>
+      </header>
+
+      <div class="p-4 sm:p-6 space-y-6">
+
+        <!-- Welcome Banner -->
+        <section class="rounded-2xl bg-gradient-to-br from-orange-500 via-rose-600 to-primary-800 text-white p-6 sm:p-8 relative overflow-hidden">
+          <div class="absolute -top-10 -right-10 w-48 h-48 bg-amber-300/25 rounded-full blur-3xl pointer-events-none"></div>
+          <div class="absolute bottom-0 -left-10 w-56 h-32 bg-rose-400/20 rounded-full blur-3xl pointer-events-none"></div>
+          <div class="relative flex flex-col sm:flex-row sm:items-start justify-between gap-6">
+            <div>
+              <p class="text-orange-100 text-sm font-medium" id="fdGreetingTime">Good morning</p>
+              <h2 class="font-display text-2xl sm:text-3xl font-bold mt-1"><span class="first-name">Dr. Ramesh Pai</span> 👋</h2>
+              <p class="text-orange-100 mt-2 text-sm">You have <b>3 classes</b> today. Next: <b>Digital Signal Processing</b> at 10:00 AM · Room E-204</p>
+              <div class="mt-5 flex flex-wrap gap-3">
+                <a onclick="showPage('attendance')" class="px-4 py-2 rounded-lg bg-white text-rose-700 text-sm font-semibold hover:bg-orange-50 transition cursor-pointer shadow-md"><i class="fa-solid fa-qrcode mr-2"></i>Take Attendance</a>
+                <button id="fdNotifyBtn" class="px-4 py-2 rounded-lg bg-white/15 border border-white/25 text-sm font-semibold hover:bg-white/25 transition"><i class="fa-solid fa-paper-plane mr-2"></i>Notify Absence</button>
+                <button id="fdClaimBtn" class="px-4 py-2 rounded-lg bg-white/15 border border-white/25 text-sm font-semibold hover:bg-white/25 transition"><i class="fa-solid fa-hand-fist mr-2"></i>Claim Free Slot</button>
+              </div>
+            </div>
+            <!-- Quick metrics pill -->
+            <div class="flex gap-3 sm:flex-col sm:items-end flex-shrink-0">
+              <div class="px-4 py-2 rounded-xl bg-white/10 backdrop-blur border border-white/20 text-center min-w-[80px]">
+                <div class="font-display font-bold text-2xl">92%</div>
+                <div class="text-[11px] text-orange-100 mt-0.5">Avg Attendance</div>
+              </div>
+              <div class="px-4 py-2 rounded-xl bg-white/10 backdrop-blur border border-white/20 text-center min-w-[80px]">
+                <div class="font-display font-bold text-2xl">45</div>
+                <div class="text-[11px] text-orange-100 mt-0.5">Students Today</div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Stat Cards -->
+        <section class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          <div class="stat-card">
+            <div class="w-10 h-10 rounded-lg flex items-center justify-center" style="background:#eef4ff;color:#3b6ef5"><i class="fa-solid fa-users"></i></div>
+            <div class="mt-4 font-display text-3xl font-bold text-primary-900">128</div>
+            <div class="text-xs text-slate-500 mt-1">Total Students</div>
+            <div class="mt-2 text-[11px] text-slate-400">3 sections · ECE</div>
+          </div>
+          <div class="stat-card">
+            <div class="w-10 h-10 rounded-lg flex items-center justify-center" style="background:#ecfdf5;color:#059669"><i class="fa-solid fa-check-double"></i></div>
+            <div class="mt-4 font-display text-3xl font-bold text-primary-900">92%</div>
+            <div class="text-xs text-slate-500 mt-1">Avg. Attendance</div>
+            <div style="width:100%;height:4px;background:#f1f5f9;border-radius:4px;margin-top:10px;overflow:hidden"><div style="width:92%;height:100%;background:#10b981;border-radius:4px"></div></div>
+          </div>
+          <div class="stat-card">
+            <div class="w-10 h-10 rounded-lg flex items-center justify-center" style="background:#ecfeff;color:#0891b2"><i class="fa-solid fa-chalkboard"></i></div>
+            <div class="mt-4 font-display text-3xl font-bold text-primary-900">3</div>
+            <div class="text-xs text-slate-500 mt-1">Classes Today</div>
+            <div class="mt-2 text-[11px] text-slate-400">DSP · ECE A, B · Lab</div>
+          </div>
+          <div class="stat-card">
+            <div class="w-10 h-10 rounded-lg flex items-center justify-center" style="background:#fff1f2;color:#e11d48"><i class="fa-solid fa-triangle-exclamation"></i></div>
+            <div class="mt-4 font-display text-3xl font-bold text-primary-900">7</div>
+            <div class="text-xs text-slate-500 mt-1">Low Att. Alerts</div>
+            <div class="mt-2 text-[11px]" style="color:#e11d48">Below 75% threshold</div>
+          </div>
+        </section>
+
+        <!-- Chart + Schedule -->
+        <section class="grid lg:grid-cols-3 gap-6">
+          <div class="bg-white rounded-2xl border border-slate-100 p-6 lg:col-span-2">
+            <div class="flex items-center justify-between mb-1">
+              <h3 class="font-display font-bold">Class Attendance Trend</h3>
+              <a onclick="showPage('reports')" class="text-xs text-primary-600 font-semibold hover:underline cursor-pointer">Full report →</a>
+            </div>
+            <p class="text-xs text-slate-500 mb-4">Last 7 sessions · Digital Signal Processing (ECE-A)</p>
+            <div style="position:relative;height:230px"><canvas id="trendChart"></canvas></div>
+          </div>
+          <div class="bg-white rounded-2xl border border-slate-100 p-6">
+            <h3 class="font-display font-bold mb-4">Today's Schedule</h3>
+            <div class="space-y-3">
+              <div class="flex items-center gap-3 p-3 rounded-xl" style="background:#eef4ff;border:1px solid #bfdbfe">
+                <div class="w-10 h-10 rounded-lg flex items-center justify-center text-xs font-bold text-white" style="background:#3b6ef5">1</div>
+                <div class="flex-1 min-w-0"><div class="font-semibold text-sm">DSP · ECE-A</div><div class="text-[11px] text-slate-500">10:00 – 11:00 · E-204</div></div>
+                <span class="text-[10px] px-2 py-0.5 rounded-full text-white font-bold animate-pulse" style="background:#10b981">● NOW</span>
+              </div>
+              <div class="flex items-center gap-3 p-3 rounded-xl bg-slate-50">
+                <div class="w-10 h-10 rounded-lg bg-white border border-slate-200 text-slate-500 flex items-center justify-center text-xs font-bold">2</div>
+                <div class="flex-1 min-w-0"><div class="font-semibold text-sm">DSP · ECE-B</div><div class="text-[11px] text-slate-500">11:15 – 12:15 · E-206</div></div>
+                <span class="text-[10px] text-slate-400 font-semibold">Upcoming</span>
+              </div>
+              <div class="flex items-center gap-3 p-3 rounded-xl bg-slate-50">
+                <div class="w-10 h-10 rounded-lg bg-white border border-slate-200 text-slate-500 flex items-center justify-center text-xs font-bold">3</div>
+                <div class="flex-1 min-w-0"><div class="font-semibold text-sm">DSP Lab · ECE-A</div><div class="text-[11px] text-slate-500">2:00 – 4:00 · Lab 3</div></div>
+                <span class="text-[10px] text-slate-400 font-semibold">Afternoon</span>
+              </div>
+            </div>
+            <!-- Mini attendance ring -->
+            <div class="mt-5 p-3 rounded-xl flex items-center gap-4" style="background:#f8fafc;border:1px solid #e2e8f0">
+              <div class="relative w-14 h-14 flex-shrink-0">
+                <svg class="w-14 h-14 -rotate-90" viewBox="0 0 56 56">
+                  <circle cx="28" cy="28" r="22" fill="none" stroke="#e2e8f0" stroke-width="5"/>
+                  <circle cx="28" cy="28" r="22" fill="none" stroke="#10b981" stroke-width="5" stroke-linecap="round"
+                    stroke-dasharray="138.2" stroke-dashoffset="11.1"/>
+                </svg>
+                <div class="absolute inset-0 flex items-center justify-center font-bold text-xs text-primary-900">92%</div>
+              </div>
+              <div><div class="font-semibold text-sm">Today's class</div><div class="text-xs text-slate-500">42 / 45 present so far</div><div class="text-[11px]" style="color:#10b981;margin-top:2px">Above 75% ✓</div></div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Live Roster -->
+        <section class="bg-white rounded-2xl border border-slate-100 overflow-hidden">
+          <div class="p-5 border-b border-slate-100 flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <h3 class="font-display font-bold">Live Class Roster</h3>
+              <p class="text-xs text-slate-500 mt-0.5">Digital Signal Processing · ECE-A · 10:00 AM</p>
+            </div>
+            <div class="flex flex-wrap gap-2 items-center">
+              <div class="text-sm" style="color:#475569">Present: <b style="color:#059669" id="presentCount">0</b> / <b id="totalCount">0</b></div>
+              <button id="markAllBtn" class="px-3 py-2 rounded-lg text-white text-sm font-semibold transition" style="background:#3b6ef5"><i class="fa-solid fa-check-double mr-2"></i>Mark All Present</button>
+            </div>
+          </div>
+          <div class="overflow-x-auto">
+            <table class="w-full text-sm">
+              <thead style="background:#f8fafc" class="text-xs text-slate-500 uppercase tracking-wider">
+                <tr>
+                  <th class="text-left p-3 w-10">#</th>
+                  <th class="text-left p-3">Name</th>
+                  <th class="text-left p-3 hidden sm:table-cell">USN</th>
+                  <th class="text-left p-3 hidden md:table-cell">Method</th>
+                  <th class="text-center p-3">Status</th>
+                  <th class="text-center p-3">Action</th>
+                </tr>
+              </thead>
+              <tbody id="rosterBody"></tbody>
+            </table>
+          </div>
+        </section>
+
+      </div>
+    </main>
+  </div>
+  <!-- Modal: Notify -->
+  <div id="modalNotify" class="hidden fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl">
+      <div class="flex items-center justify-between mb-4"><h3 class="font-display font-bold text-lg">Notify Absence</h3><button onclick="document.getElementById('modalNotify').classList.add('hidden')" class="text-slate-400 hover:text-slate-700 text-xl"><i class="fa-solid fa-xmark"></i></button></div>
+      <p class="text-sm text-slate-600 mb-4">Inform students &amp; other faculty that you're unavailable for a class.</p>
+      <label class="text-xs font-semibold text-slate-600 uppercase tracking-wider">Select Class</label>
+      <select class="w-full mt-1 mb-3 px-3 py-2.5 rounded-xl border border-slate-200 text-sm outline-none focus:ring-2 focus:ring-primary-200"><option>DSP · ECE-A · 10:00 AM</option><option>DSP · ECE-B · 11:15 AM</option><option>DSP Lab · ECE-A · 2:00 PM</option></select>
+      <label class="text-xs font-semibold text-slate-600 uppercase tracking-wider">Reason</label>
+      <textarea class="w-full mt-1 mb-4 px-3 py-2.5 rounded-xl border border-slate-200 text-sm outline-none focus:ring-2 focus:ring-primary-200" rows="3" placeholder="e.g. Faculty meeting at HOD office"></textarea>
+      <button onclick="document.getElementById('modalNotify').classList.add('hidden');SmartAttend.toast('Notification sent to 45 students & 4 faculty ✓')" class="w-full py-2.5 rounded-xl text-white font-semibold hover:opacity-90 transition" style="background:#3b6ef5">Send Notification</button>
+    </div>
+  </div>
+  <!-- Modal: Claim Slot -->
+  <div id="modalClaim" class="hidden fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl">
+      <div class="flex items-center justify-between mb-4"><h3 class="font-display font-bold text-lg">Claim Free Slot</h3><button onclick="document.getElementById('modalClaim').classList.add('hidden')" class="text-slate-400 hover:text-slate-700 text-xl"><i class="fa-solid fa-xmark"></i></button></div>
+      <p class="text-sm text-slate-600 mb-4">Available free periods you can take over today:</p>
+      <div class="space-y-2">
+        <button onclick="document.getElementById('modalClaim').classList.add('hidden');SmartAttend.toast('Claimed: Microcontrollers · ECE-A · 11:15 AM ✓')" class="w-full text-left p-4 rounded-xl border border-slate-200 hover:border-primary-300 hover:bg-primary-50 transition">
+          <div class="font-semibold text-sm">Microcontrollers · ECE-A</div><div class="text-xs text-slate-500 mt-1">11:15 – 12:15 · E-206 · Prof. Anita unavailable</div>
+        </button>
+        <button onclick="document.getElementById('modalClaim').classList.add('hidden');SmartAttend.toast('Claimed: Biology for Engineers · ECE-A · 12:15 PM ✓')" class="w-full text-left p-4 rounded-xl border border-slate-200 hover:border-primary-300 hover:bg-primary-50 transition">
+          <div class="font-semibold text-sm">Biology for Engineers · ECE-A</div><div class="text-xs text-slate-500 mt-1">12:15 – 1:15 · E-202 · Dr. Priya unavailable</div>
+        </button>
+      </div>
+    </div>
+  </div>
+</div><!-- /page-faculty-dashboard -->
+
+<!-- ===================== STUDENTS MANAGEMENT (FACULTY ONLY) ===================== -->
+<div id="page-students" class="page hidden bg-slate-50">
+  <div class="flex">
+    <aside class="sidebar fixed lg:sticky top-0 inset-y-0 left-0 w-64 bg-gradient-to-b from-primary-900 via-primary-900 to-slate-900 text-white p-4 z-40 -translate-x-full lg:translate-x-0 transition-transform h-screen">
+      <a onclick="showPage('landing')" class="flex items-center gap-2 p-2 mb-6 cursor-pointer"><div class="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center"><i class="fa-solid fa-graduation-cap"></i></div><div><div class="font-display font-bold leading-none">SmartAttend</div><div class="text-[10px] text-primary-200 uppercase tracking-wider">Faculty Portal</div></div></a>
+      <nav class="space-y-1 sidebar-nav"></nav>
+      <div class="absolute bottom-4 left-4 right-4"><div class="p-3 rounded-xl bg-white/5 border border-white/10"><div class="flex items-center gap-3"><div class="w-10 h-10 rounded-full bg-gradient-to-br from-orange-400 to-rose-400 flex items-center justify-center font-bold text-sm user-avatar">RP</div><div class="flex-1 min-w-0"><div class="font-semibold text-sm truncate user-name">User</div><div class="text-[10px] text-primary-200 truncate user-sub">Faculty</div></div></div><button onclick="SmartAttend.logout()" class="w-full mt-3 text-xs py-1.5 rounded-lg bg-white/10 hover:bg-white/20 transition"><i class="fa-solid fa-right-from-bracket mr-1"></i> Logout</button></div></div>
+    </aside>
+    <main class="flex-1 min-h-screen">
+      <header class="sticky top-0 z-30 bg-white/80 backdrop-blur border-b border-slate-200 px-4 sm:px-6 py-3 flex items-center justify-between">
+        <div class="flex items-center gap-3">
+          <button class="menu-btn lg:hidden p-2 rounded-lg hover:bg-slate-100"><i class="fa-solid fa-bars"></i></button>
+          <div><h1 class="font-display font-bold text-lg sm:text-xl text-primary-900">Manage Students</h1><p class="text-xs text-slate-500">Add, edit, or remove enrolled students · Faculty only</p></div>
+        </div>
+        <div class="flex items-center gap-2">
+          <span id="smApiStatus" class="text-xs px-2 py-1 rounded-full font-semibold hidden"></span>
+          <button id="smOpenAddModal" class="flex items-center gap-2 px-4 py-2 rounded-lg text-white text-sm font-semibold transition" style="background:#3b6ef5">
+            <i class="fa-solid fa-user-plus"></i><span class="hidden sm:inline">Add Student</span>
+          </button>
+        </div>
+      </header>
+
+      <div class="p-4 sm:p-6 space-y-6">
+
+        <!-- Stats row -->
+        <section class="grid grid-cols-2 sm:grid-cols-4 gap-4">
+          <div class="stat-card">
+            <div class="w-10 h-10 rounded-lg flex items-center justify-center" style="background:#eef4ff;color:#3b6ef5"><i class="fa-solid fa-users"></i></div>
+            <div class="mt-4 font-display text-3xl font-bold text-primary-900" id="smTotalCount">—</div>
+            <div class="text-xs text-slate-500 mt-1">Active Students</div>
+          </div>
+          <div class="stat-card">
+            <div class="w-10 h-10 rounded-lg flex items-center justify-center" style="background:#ecfdf5;color:#059669"><i class="fa-solid fa-user-check"></i></div>
+            <div class="mt-4 font-display text-3xl font-bold text-primary-900" id="smSecACount">—</div>
+            <div class="text-xs text-slate-500 mt-1">Section A</div>
+          </div>
+          <div class="stat-card">
+            <div class="w-10 h-10 rounded-lg flex items-center justify-center" style="background:#ecfeff;color:#0891b2"><i class="fa-solid fa-user-group"></i></div>
+            <div class="mt-4 font-display text-3xl font-bold text-primary-900" id="smSecBCount">—</div>
+            <div class="text-xs text-slate-500 mt-1">Section B</div>
+          </div>
+          <div class="stat-card">
+            <div class="w-10 h-10 rounded-lg flex items-center justify-center" style="background:#fff7ed;color:#ea580c"><i class="fa-solid fa-calendar-plus"></i></div>
+            <div class="mt-4 font-display text-3xl font-bold text-primary-900" id="smNewCount">—</div>
+            <div class="text-xs text-slate-500 mt-1">Added This Month</div>
+          </div>
+        </section>
+
+        <!-- Filters + Search -->
+        <div class="flex flex-wrap gap-3 items-center">
+          <div class="relative flex-1 min-w-[200px]">
+            <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
+            <input id="smSearch" type="text" placeholder="Search by name or USN…" class="w-full pl-9 pr-3 py-2.5 rounded-xl border border-slate-200 text-sm outline-none focus:ring-2 focus:ring-primary-200 bg-white">
+          </div>
+          <select id="smFilterSec" class="px-3 py-2.5 rounded-xl border border-slate-200 text-sm outline-none bg-white focus:ring-2 focus:ring-primary-200">
+            <option value="">All Sections</option>
+            <option value="A">Section A</option>
+            <option value="B">Section B</option>
+          </select>
+          <select id="smFilterSem" class="px-3 py-2.5 rounded-xl border border-slate-200 text-sm outline-none bg-white focus:ring-2 focus:ring-primary-200">
+            <option value="">All Semesters</option>
+            <option value="4">Semester 4</option>
+            <option value="5">Semester 5</option>
+            <option value="6">Semester 6</option>
+          </select>
+          <button id="smRefreshBtn" class="px-3 py-2.5 rounded-xl border border-slate-200 bg-white text-sm font-medium hover:bg-slate-50 transition"><i class="fa-solid fa-rotate-right mr-1"></i>Refresh</button>
+        </div>
+
+        <!-- Students Table -->
+        <section class="bg-white rounded-2xl border border-slate-100 overflow-hidden">
+          <div class="p-5 border-b border-slate-100 flex items-center justify-between">
+            <div><h3 class="font-display font-bold">Enrolled Students</h3><p class="text-xs text-slate-500 mt-0.5" id="smTableSubtitle">Loading…</p></div>
+            <div id="smLoadingSpinner" class="hidden"><i class="fa-solid fa-circle-notch fa-spin text-primary-500"></i></div>
+          </div>
+          <div class="overflow-x-auto">
+            <table class="w-full text-sm">
+              <thead style="background:#f8fafc" class="text-xs text-slate-400 uppercase tracking-wider">
+                <tr>
+                  <th class="text-left p-4">Student</th>
+                  <th class="text-left p-4 hidden sm:table-cell">USN</th>
+                  <th class="text-left p-4 hidden md:table-cell">Email</th>
+                  <th class="text-center p-4">Sem · Sec</th>
+                  <th class="text-center p-4">Status</th>
+                  <th class="text-center p-4">Added</th>
+                  <th class="text-center p-4">Actions</th>
+                </tr>
+              </thead>
+              <tbody id="smTableBody">
+                <tr><td colspan="7" class="p-10 text-center text-slate-400"><i class="fa-solid fa-circle-notch fa-spin mr-2"></i>Loading students…</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+      </div>
+    </main>
+  </div>
+
+  <!-- ── Add Student Modal ── -->
+  <div id="smAddModal" class="hidden fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl max-w-lg w-full shadow-2xl overflow-hidden">
+      <div class="p-6 border-b border-slate-100 flex items-center justify-between">
+        <div><h3 class="font-display font-bold text-lg">Add New Student</h3><p class="text-xs text-slate-500 mt-0.5">Student can log in with their USN + password</p></div>
+        <button onclick="smCloseAdd()" class="text-slate-400 hover:text-slate-700 text-xl w-8 h-8 flex items-center justify-center rounded-lg hover:bg-slate-100"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <div class="p-6 space-y-4">
+        <div class="grid grid-cols-2 gap-4">
+          <div class="col-span-2">
+            <label class="text-xs font-semibold text-slate-600 uppercase tracking-wider">Full Name *</label>
+            <input id="smName" type="text" placeholder="e.g. Alisa Carisma Fernandes" class="mt-1 w-full px-3 py-2.5 rounded-xl border border-slate-200 text-sm outline-none focus:ring-2 focus:ring-primary-200">
+          </div>
+          <div>
+            <label class="text-xs font-semibold text-slate-600 uppercase tracking-wider">USN *</label>
+            <input id="smUsn" type="text" placeholder="4SO24EC007" class="mt-1 w-full px-3 py-2.5 rounded-xl border border-slate-200 text-sm outline-none focus:ring-2 focus:ring-primary-200 font-mono uppercase">
+          </div>
+          <div>
+            <label class="text-xs font-semibold text-slate-600 uppercase tracking-wider">Password *</label>
+            <input id="smPassword" type="password" placeholder="Min 6 characters" class="mt-1 w-full px-3 py-2.5 rounded-xl border border-slate-200 text-sm outline-none focus:ring-2 focus:ring-primary-200">
+          </div>
+          <div class="col-span-2">
+            <label class="text-xs font-semibold text-slate-600 uppercase tracking-wider">Email *</label>
+            <input id="smEmail" type="email" placeholder="student@sjec.ac.in" class="mt-1 w-full px-3 py-2.5 rounded-xl border border-slate-200 text-sm outline-none focus:ring-2 focus:ring-primary-200">
+          </div>
+          <div>
+            <label class="text-xs font-semibold text-slate-600 uppercase tracking-wider">Semester</label>
+            <select id="smSemester" class="mt-1 w-full px-3 py-2.5 rounded-xl border border-slate-200 text-sm outline-none focus:ring-2 focus:ring-primary-200">
+              <option value="4">4th Semester</option>
+              <option value="5">5th Semester</option>
+              <option value="6">6th Semester</option>
+            </select>
+          </div>
+          <div>
+            <label class="text-xs font-semibold text-slate-600 uppercase tracking-wider">Section</label>
+            <select id="smSection" class="mt-1 w-full px-3 py-2.5 rounded-xl border border-slate-200 text-sm outline-none focus:ring-2 focus:ring-primary-200">
+              <option value="A">Section A</option>
+              <option value="B">Section B</option>
+            </select>
+          </div>
+        </div>
+        <div id="smAddError" class="hidden px-3 py-2 rounded-xl text-sm font-medium" style="background:#fff1f2;color:#e11d48"></div>
+      </div>
+      <div class="p-6 pt-0 flex gap-3">
+        <button onclick="smCloseAdd()" class="flex-1 py-2.5 rounded-xl border border-slate-200 text-sm font-semibold hover:bg-slate-50 transition">Cancel</button>
+        <button id="smAddSubmit" onclick="smSubmitAdd()" class="flex-1 py-2.5 rounded-xl text-white text-sm font-semibold transition" style="background:#3b6ef5">
+          <i class="fa-solid fa-user-plus mr-2"></i>Add Student
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Edit Student Modal ── -->
+  <div id="smEditModal" class="hidden fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl max-w-lg w-full shadow-2xl overflow-hidden">
+      <div class="p-6 border-b border-slate-100 flex items-center justify-between">
+        <div><h3 class="font-display font-bold text-lg">Edit Student</h3><p class="text-xs text-slate-500 mt-0.5" id="smEditSubtitle">—</p></div>
+        <button onclick="smCloseEdit()" class="text-slate-400 hover:text-slate-700 text-xl w-8 h-8 flex items-center justify-center rounded-lg hover:bg-slate-100"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <div class="p-6 space-y-4">
+        <input type="hidden" id="smEditId">
+        <div class="grid grid-cols-2 gap-4">
+          <div class="col-span-2">
+            <label class="text-xs font-semibold text-slate-600 uppercase tracking-wider">Full Name</label>
+            <input id="smEditName" type="text" class="mt-1 w-full px-3 py-2.5 rounded-xl border border-slate-200 text-sm outline-none focus:ring-2 focus:ring-primary-200">
+          </div>
+          <div class="col-span-2">
+            <label class="text-xs font-semibold text-slate-600 uppercase tracking-wider">Email</label>
+            <input id="smEditEmail" type="email" class="mt-1 w-full px-3 py-2.5 rounded-xl border border-slate-200 text-sm outline-none focus:ring-2 focus:ring-primary-200">
+          </div>
+          <div>
+            <label class="text-xs font-semibold text-slate-600 uppercase tracking-wider">Semester</label>
+            <select id="smEditSemester" class="mt-1 w-full px-3 py-2.5 rounded-xl border border-slate-200 text-sm outline-none focus:ring-2 focus:ring-primary-200">
+              <option value="4">4th Semester</option><option value="5">5th Semester</option><option value="6">6th Semester</option>
+            </select>
+          </div>
+          <div>
+            <label class="text-xs font-semibold text-slate-600 uppercase tracking-wider">Section</label>
+            <select id="smEditSection" class="mt-1 w-full px-3 py-2.5 rounded-xl border border-slate-200 text-sm outline-none focus:ring-2 focus:ring-primary-200">
+              <option value="A">Section A</option><option value="B">Section B</option>
+            </select>
+          </div>
+          <div class="col-span-2">
+            <label class="text-xs font-semibold text-slate-600 uppercase tracking-wider">New Password <span class="text-slate-400 normal-case font-normal">(leave blank to keep current)</span></label>
+            <input id="smEditPassword" type="password" placeholder="Min 6 characters" class="mt-1 w-full px-3 py-2.5 rounded-xl border border-slate-200 text-sm outline-none focus:ring-2 focus:ring-primary-200">
+          </div>
+        </div>
+        <div id="smEditError" class="hidden px-3 py-2 rounded-xl text-sm font-medium" style="background:#fff1f2;color:#e11d48"></div>
+      </div>
+      <div class="p-6 pt-0 flex gap-3">
+        <button onclick="smCloseEdit()" class="flex-1 py-2.5 rounded-xl border border-slate-200 text-sm font-semibold hover:bg-slate-50 transition">Cancel</button>
+        <button id="smEditSubmit" onclick="smSubmitEdit()" class="flex-1 py-2.5 rounded-xl text-white text-sm font-semibold transition" style="background:#3b6ef5">
+          <i class="fa-solid fa-floppy-disk mr-2"></i>Save Changes
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Delete Confirm Modal ── -->
+  <div id="smDeleteModal" class="hidden fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl max-w-sm w-full shadow-2xl p-6 text-center">
+      <div class="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4" style="background:#fff1f2"><i class="fa-solid fa-user-minus text-2xl" style="color:#e11d48"></i></div>
+      <h3 class="font-display font-bold text-lg">Deactivate Student?</h3>
+      <p class="text-sm text-slate-600 mt-2">This will deactivate <b id="smDeleteName">—</b>'s account. Their attendance records will be preserved. You can restore them later.</p>
+      <input type="hidden" id="smDeleteId">
+      <div class="flex gap-3 mt-6">
+        <button onclick="smCloseDelete()" class="flex-1 py-2.5 rounded-xl border border-slate-200 text-sm font-semibold hover:bg-slate-50 transition">Cancel</button>
+        <button id="smDeleteConfirm" onclick="smSubmitDelete()" class="flex-1 py-2.5 rounded-xl text-white text-sm font-semibold" style="background:#e11d48">Deactivate</button>
+      </div>
+    </div>
+  </div>
+</div><!-- /page-students -->
+
+<!-- ===================== ATTENDANCE PAGE ===================== -->
+<div id="page-attendance" class="page hidden bg-slate-50">
+  <div class="flex">
+    <aside class="sidebar fixed lg:sticky top-0 inset-y-0 left-0 w-64 bg-gradient-to-b from-primary-900 via-primary-900 to-slate-900 text-white p-4 z-40 -translate-x-full lg:translate-x-0 transition-transform h-screen">
+      <a onclick="showPage('landing')" class="flex items-center gap-2 p-2 mb-6 cursor-pointer"><div class="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center"><i class="fa-solid fa-graduation-cap"></i></div><div><div class="font-display font-bold leading-none">SmartAttend</div><div class="text-[10px] text-primary-200 uppercase tracking-wider sidebar-role">Portal</div></div></a>
+      <nav class="space-y-1 sidebar-nav"></nav>
+      <div class="absolute bottom-4 left-4 right-4"><div class="p-3 rounded-xl bg-white/5 border border-white/10"><div class="flex items-center gap-3"><div class="w-10 h-10 rounded-full bg-gradient-to-br from-primary-400 to-cyan-400 flex items-center justify-center font-bold user-avatar">U</div><div class="flex-1 min-w-0"><div class="font-semibold text-sm truncate user-name">User</div><div class="text-[10px] text-primary-200 truncate user-sub">ID</div></div></div><button onclick="SmartAttend.logout()" class="w-full mt-3 text-xs py-1.5 rounded-lg bg-white/10 hover:bg-white/20"><i class="fa-solid fa-right-from-bracket mr-1"></i> Logout</button></div></div>
+    </aside>
+    <main class="flex-1 min-h-screen">
+      <header class="sticky top-0 z-30 bg-white/80 backdrop-blur border-b border-slate-200 px-4 sm:px-6 py-3 flex items-center justify-between">
+        <div class="flex items-center gap-3"><button class="menu-btn lg:hidden p-2 rounded-lg hover:bg-slate-100"><i class="fa-solid fa-bars"></i></button><div><h1 class="font-display font-bold text-lg sm:text-xl text-primary-900">Mark Attendance</h1><p class="text-xs text-slate-500">Choose any method to verify your presence</p></div></div>
+      </header>
+      <div class="p-4 sm:p-6 space-y-6">
+        <div class="rounded-2xl bg-white border border-slate-100 p-5 flex flex-wrap items-center gap-4"><div class="w-12 h-12 rounded-xl bg-primary-100 text-primary-700 flex items-center justify-center"><i class="fa-solid fa-chalkboard text-xl"></i></div><div class="flex-1"><div class="font-display font-bold">Digital Signal Processing</div><div class="text-xs text-slate-500">22EC41 · Dr. Ramesh Pai · Room E-204 · 10:00 – 11:00 AM</div></div><span class="px-3 py-1 rounded-full bg-emerald-50 text-emerald-600 text-xs font-bold animate-pulse">● LIVE NOW</span></div>
+        <div class="grid grid-cols-3 gap-2 p-1.5 bg-white border border-slate-100 rounded-xl">
+          <button class="method-tab active bg-primary-600 text-white py-2.5 rounded-lg text-sm font-semibold" data-tab="qr"><i class="fa-solid fa-qrcode mr-2"></i><span class="hidden sm:inline">QR Code</span></button>
+          <button class="method-tab py-2.5 rounded-lg text-sm font-semibold text-slate-500" data-tab="face"><i class="fa-solid fa-face-smile mr-2"></i><span class="hidden sm:inline">Face Recognition</span></button>
+          <button class="method-tab py-2.5 rounded-lg text-sm font-semibold text-slate-500" data-tab="finger"><i class="fa-solid fa-fingerprint mr-2"></i><span class="hidden sm:inline">Biometric</span></button>
+        </div>
+        <div class="grid lg:grid-cols-3 gap-6">
+          <div class="bg-white rounded-2xl border border-slate-100 p-6 lg:col-span-2 flex flex-col items-center text-center">
+            <div class="panel w-full" data-panel="qr">
+              <p class="text-sm text-slate-500 mb-4">Show this QR code to the faculty's scanner, or scan the QR projected on the classroom screen.</p>
+              <div class="inline-block p-4 bg-white border border-slate-200 rounded-2xl shadow-sm"><div id="qrcode"></div></div>
+              <div class="mt-4 text-xs text-slate-500">Code expires in <span id="countdown" class="font-bold text-primary-600">02:45</span></div>
+              <button id="markQr" class="mt-6 px-6 py-3 rounded-xl bg-primary-600 text-white font-semibold hover:bg-primary-700 shadow-lg shadow-primary-500/30 transition"><i class="fa-solid fa-check mr-2"></i>I have shown / scanned the code</button>
+            </div>
+            <div class="panel hidden w-full" data-panel="face">
+              <p class="text-sm text-slate-500 mb-4">Position your face inside the frame. Your camera will be used only for verification.</p>
+              <div class="relative w-full max-w-md mx-auto aspect-video bg-slate-900 rounded-2xl overflow-hidden"><video id="video" autoplay playsinline class="w-full h-full object-cover"></video><div class="absolute inset-6 border-2 border-dashed border-cyan-400 rounded-2xl pointer-events-none"></div><div class="absolute inset-x-0 bottom-3 text-center text-white text-xs">Align your face within the dashed box</div></div>
+              <div class="mt-4 flex flex-wrap gap-3 justify-center"><button id="startCam" class="px-5 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 font-semibold text-sm"><i class="fa-solid fa-video mr-2"></i>Start Camera</button><button id="captureFace" class="px-5 py-2.5 rounded-xl bg-cyan-500 text-white font-semibold text-sm hover:bg-cyan-600 transition"><i class="fa-solid fa-camera mr-2"></i>Capture & Verify</button></div>
+            </div>
+            <div class="panel hidden w-full flex flex-col items-center" data-panel="finger">
+              <p class="text-sm text-slate-500 mb-6">Place your finger on the scanner. We'll verify and mark your attendance.</p>
+              <div class="finger-pulse mx-auto"><button id="fingerBtn" class="w-32 h-32 rounded-full bg-gradient-to-br from-violet-500 to-violet-700 text-white shadow-2xl shadow-violet-500/40 flex items-center justify-center hover:scale-105 transition"><i class="fa-solid fa-fingerprint text-5xl"></i></button></div>
+              <div class="mt-6 text-xs text-slate-500">Tap to scan fingerprint</div>
+            </div>
+          </div>
+          <div class="bg-white rounded-2xl border border-slate-100 p-6"><div class="flex items-center justify-between mb-4"><h3 class="font-display font-bold">Recent Activity</h3><span class="text-xs text-slate-400" id="logCount">0 records</span></div><div id="recentLog" class="space-y-3 max-h-[500px] overflow-y-auto"><div class="text-center text-sm text-slate-400 py-8">No attendance yet. Mark your first one!</div></div></div>
+        </div>
+      </div>
+    </main>
+  </div>
+</div><!-- /page-attendance -->
+
+<!-- ===================== TIMETABLE PAGE ===================== -->
+<div id="page-timetable" class="page hidden bg-slate-50">
+  <div class="flex">
+    <aside class="sidebar fixed lg:sticky top-0 inset-y-0 left-0 w-64 bg-gradient-to-b from-primary-900 via-primary-900 to-slate-900 text-white p-4 z-40 -translate-x-full lg:translate-x-0 transition-transform h-screen">
+      <a onclick="showPage('landing')" class="flex items-center gap-2 p-2 mb-6 cursor-pointer"><div class="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center"><i class="fa-solid fa-graduation-cap"></i></div><div><div class="font-display font-bold leading-none">SmartAttend</div><div class="text-[10px] text-primary-200 uppercase tracking-wider sidebar-role">Portal</div></div></a>
+      <nav class="space-y-1 sidebar-nav"></nav>
+      <div class="absolute bottom-4 left-4 right-4"><div class="p-3 rounded-xl bg-white/5 border border-white/10"><div class="flex items-center gap-3"><div class="w-10 h-10 rounded-full bg-gradient-to-br from-primary-400 to-cyan-400 flex items-center justify-center font-bold user-avatar">U</div><div class="flex-1 min-w-0"><div class="font-semibold text-sm truncate user-name">User</div><div class="text-[10px] text-primary-200 truncate user-sub">ID</div></div></div><button onclick="SmartAttend.logout()" class="w-full mt-3 text-xs py-1.5 rounded-lg bg-white/10 hover:bg-white/20"><i class="fa-solid fa-right-from-bracket mr-1"></i> Logout</button></div></div>
+    </aside>
+    <main class="flex-1 min-h-screen">
+      <header class="sticky top-0 z-30 bg-white/80 backdrop-blur border-b border-slate-200 px-4 sm:px-6 py-3 flex items-center justify-between">
+        <div class="flex items-center gap-3"><button class="menu-btn lg:hidden p-2 rounded-lg hover:bg-slate-100"><i class="fa-solid fa-bars"></i></button><div><h1 class="font-display font-bold text-lg sm:text-xl text-primary-900">Weekly Timetable</h1><p class="text-xs text-slate-500">4<sup>th</sup> Semester · ECE · Section A</p></div></div>
+        <button onclick="window.print()" class="px-3 py-2 rounded-lg bg-slate-100 hover:bg-slate-200 text-sm no-print"><i class="fa-solid fa-print mr-2"></i>Print</button>
+      </header>
+      <div class="p-4 sm:p-6">
+        <div class="bg-white rounded-2xl border border-slate-100 p-4 overflow-x-auto">
+          <table class="w-full text-sm min-w-[800px]">
+            <thead><tr class="text-xs text-slate-400 uppercase tracking-wider"><th class="text-left p-3 w-24">Day</th><th class="p-3" id="hdr0"></th><th class="p-3" id="hdr1"></th><th class="p-3 bg-amber-50 text-amber-700">Break</th><th class="p-3" id="hdr3"></th><th class="p-3" id="hdr4"></th><th class="p-3" id="hdr5"></th></tr></thead>
+            <tbody id="ttBody"></tbody>
+          </table>
+        </div>
+        <div class="mt-4 flex flex-wrap gap-3 text-xs"><div class="flex items-center gap-2"><div class="w-3 h-3 rounded bg-primary-200"></div>Theory class</div><div class="flex items-center gap-2"><div class="w-3 h-3 rounded bg-emerald-200"></div>Lab session</div><div class="flex items-center gap-2"><div class="w-3 h-3 rounded bg-amber-100"></div>Break</div><div class="flex items-center gap-2"><div class="w-3 h-3 rounded bg-slate-100"></div>Free period</div></div>
+      </div>
+    </main>
+  </div>
+</div><!-- /page-timetable -->
+
+<!-- ===================== PRODUCTIVITY PAGE ===================== -->
+<div id="page-productivity" class="page hidden bg-slate-50">
+  <div class="flex">
+    <aside class="sidebar fixed lg:sticky top-0 inset-y-0 left-0 w-64 bg-gradient-to-b from-primary-900 via-primary-900 to-slate-900 text-white p-4 z-40 -translate-x-full lg:translate-x-0 transition-transform h-screen">
+      <a onclick="showPage('landing')" class="flex items-center gap-2 p-2 mb-6 cursor-pointer"><div class="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center"><i class="fa-solid fa-graduation-cap"></i></div><div><div class="font-display font-bold leading-none">SmartAttend</div><div class="text-[10px] text-primary-200 uppercase tracking-wider">Student Portal</div></div></a>
+      <nav class="space-y-1 sidebar-nav"></nav>
+      <div class="absolute bottom-4 left-4 right-4"><div class="p-3 rounded-xl bg-white/5 border border-white/10"><div class="flex items-center gap-3"><div class="w-10 h-10 rounded-full bg-gradient-to-br from-primary-400 to-cyan-400 flex items-center justify-center font-bold user-avatar">U</div><div class="flex-1 min-w-0"><div class="font-semibold text-sm truncate user-name">User</div><div class="text-[10px] text-primary-200 truncate user-sub">ID</div></div></div><button onclick="SmartAttend.logout()" class="w-full mt-3 text-xs py-1.5 rounded-lg bg-white/10 hover:bg-white/20"><i class="fa-solid fa-right-from-bracket mr-1"></i> Logout</button></div></div>
+    </aside>
+    <main class="flex-1 min-h-screen">
+      <header class="sticky top-0 z-30 bg-white/80 backdrop-blur border-b border-slate-200 px-4 sm:px-6 py-3 flex items-center justify-between">
+        <div class="flex items-center gap-3"><button class="menu-btn lg:hidden p-2 rounded-lg hover:bg-slate-100"><i class="fa-solid fa-bars"></i></button><div><h1 class="font-display font-bold text-lg sm:text-xl text-primary-900">Productivity Hub</h1><p class="text-xs text-slate-500">Make the most of your free periods</p></div></div>
+      </header>
+      <div class="p-4 sm:p-6 space-y-6">
+        <section class="rounded-2xl bg-gradient-to-br from-violet-600 via-primary-700 to-cyan-600 text-white p-6 sm:p-8 relative overflow-hidden"><div class="absolute -top-10 -right-10 w-48 h-48 bg-cyan-300/30 rounded-full blur-3xl"></div><div class="relative"><div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/15 backdrop-blur text-xs font-semibold"><i class="fa-solid fa-clock"></i> Free period: 12:15 – 1:15 PM</div><h2 class="font-display text-2xl sm:text-3xl font-bold mt-3">Make this hour count.</h2><p class="text-violet-100 mt-2 text-sm">We've curated activities matched to your goals — coding, aptitude, learning & career skills.</p></div></section>
+        <div class="flex flex-wrap gap-2">
+          <button class="filter-btn active px-4 py-2 rounded-full bg-primary-600 text-white text-sm font-semibold" data-cat="all">All</button>
+          <button class="filter-btn px-4 py-2 rounded-full bg-white border border-slate-200 text-sm font-semibold" data-cat="Coding">💻 Coding</button>
+          <button class="filter-btn px-4 py-2 rounded-full bg-white border border-slate-200 text-sm font-semibold" data-cat="Aptitude">🧮 Aptitude</button>
+          <button class="filter-btn px-4 py-2 rounded-full bg-white border border-slate-200 text-sm font-semibold" data-cat="Course">📚 Courses</button>
+          <button class="filter-btn px-4 py-2 rounded-full bg-white border border-slate-200 text-sm font-semibold" data-cat="Career">💼 Career</button>
+        </div>
+        <div id="actGrid" class="grid sm:grid-cols-2 lg:grid-cols-3 gap-5"></div>
+        <section class="bg-white rounded-2xl border border-slate-100 p-6"><h3 class="font-display font-bold mb-4">Today's Learning Goals</h3><div class="space-y-3"><div class="flex items-center gap-3 p-3 rounded-xl bg-emerald-50 border border-emerald-100"><i class="fa-solid fa-circle-check text-emerald-600"></i><div class="flex-1"><div class="text-sm font-semibold line-through text-slate-500">Solve 2 LeetCode problems</div></div><span class="text-xs text-emerald-600 font-bold">Done</span></div><div class="flex items-center gap-3 p-3 rounded-xl bg-amber-50 border border-amber-100"><i class="fa-regular fa-circle-dot text-amber-600"></i><div class="flex-1"><div class="text-sm font-semibold">Complete 1 NPTEL lecture</div><div class="w-full h-1.5 bg-amber-200/50 rounded-full mt-2 overflow-hidden"><div class="h-full bg-amber-500" style="width:60%"></div></div></div><span class="text-xs text-amber-700 font-bold">60%</span></div><div class="flex items-center gap-3 p-3 rounded-xl bg-slate-50 border border-slate-100"><i class="fa-regular fa-circle text-slate-400"></i><div class="flex-1"><div class="text-sm font-semibold">Practice 10 aptitude questions</div></div><span class="text-xs text-slate-500 font-bold">Pending</span></div></div></section>
+      </div>
+    </main>
+  </div>
+</div><!-- /page-productivity -->
+
+<!-- ===================== REPORTS PAGE ===================== -->
+<div id="page-reports" class="page hidden bg-slate-50">
+  <div class="flex">
+    <aside class="sidebar fixed lg:sticky top-0 inset-y-0 left-0 w-64 bg-gradient-to-b from-primary-900 via-primary-900 to-slate-900 text-white p-4 z-40 -translate-x-full lg:translate-x-0 transition-transform h-screen">
+      <a onclick="showPage('landing')" class="flex items-center gap-2 p-2 mb-6 cursor-pointer"><div class="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center"><i class="fa-solid fa-graduation-cap"></i></div><div><div class="font-display font-bold leading-none">SmartAttend</div><div class="text-[10px] text-primary-200 uppercase tracking-wider sidebar-role">Portal</div></div></a>
+      <nav class="space-y-1 sidebar-nav"></nav>
+      <div class="absolute bottom-4 left-4 right-4"><div class="p-3 rounded-xl bg-white/5 border border-white/10"><div class="flex items-center gap-3"><div class="w-10 h-10 rounded-full bg-gradient-to-br from-primary-400 to-cyan-400 flex items-center justify-center font-bold user-avatar">U</div><div class="flex-1 min-w-0"><div class="font-semibold text-sm truncate user-name">User</div><div class="text-[10px] text-primary-200 truncate user-sub">ID</div></div></div><button onclick="SmartAttend.logout()" class="w-full mt-3 text-xs py-1.5 rounded-lg bg-white/10 hover:bg-white/20"><i class="fa-solid fa-right-from-bracket mr-1"></i> Logout</button></div></div>
+    </aside>
+    <main class="flex-1 min-h-screen">
+      <header class="sticky top-0 z-30 bg-white/80 backdrop-blur border-b border-slate-200 px-4 sm:px-6 py-3 flex items-center justify-between">
+        <div class="flex items-center gap-3"><button class="menu-btn lg:hidden p-2 rounded-lg hover:bg-slate-100"><i class="fa-solid fa-bars"></i></button><div><h1 class="font-display font-bold text-lg sm:text-xl text-primary-900">Attendance Reports</h1><p class="text-xs text-slate-500">Detailed analytics &amp; subject-wise breakdown</p></div></div>
+        <button onclick="window.print()" class="px-3 py-2 rounded-lg bg-slate-100 hover:bg-slate-200 text-sm font-medium no-print"><i class="fa-solid fa-file-arrow-down mr-2"></i>Export</button>
+      </header>
+      <div class="p-4 sm:p-6 space-y-6">
+
+        <!-- Summary banner -->
+        <section class="rounded-2xl bg-gradient-to-br from-primary-600 to-primary-900 text-white p-6 relative overflow-hidden">
+          <div class="absolute -top-10 -right-10 w-40 h-40 bg-cyan-400/20 rounded-full blur-3xl"></div>
+          <div class="relative grid sm:grid-cols-4 gap-6">
+            <div><div class="text-primary-200 text-xs uppercase tracking-widest font-semibold">Overall</div><div class="font-display text-4xl font-bold mt-1">84%</div><div class="text-primary-100 text-xs mt-1">Semester average</div></div>
+            <div><div class="text-primary-200 text-xs uppercase tracking-widest font-semibold">Classes Attended</div><div class="font-display text-4xl font-bold mt-1" id="repAttended">—</div><div class="text-primary-100 text-xs mt-1" id="repTotal">out of —</div></div>
+            <div><div class="text-primary-200 text-xs uppercase tracking-widest font-semibold">Missed</div><div class="font-display text-4xl font-bold mt-1 text-rose-300" id="repMissed">—</div><div class="text-primary-100 text-xs mt-1">classes this semester</div></div>
+            <div><div class="text-primary-200 text-xs uppercase tracking-widest font-semibold">Best Subject</div><div class="font-display text-xl font-bold mt-1" id="repBest">—</div><div class="text-emerald-300 text-xs mt-1" id="repBestPct">—</div></div>
+          </div>
+        </section>
+
+        <!-- Low attendance warning -->
+        <div id="lowAttendanceAlert" class="hidden rounded-2xl p-4 border flex items-start gap-3" style="background:#fff1f2;border-color:#fecdd3">
+          <i class="fa-solid fa-triangle-exclamation mt-0.5" style="color:#e11d48"></i>
+          <div><div class="font-semibold text-sm" style="color:#be123c">⚠ Low Attendance Warning</div><div class="text-sm mt-1" style="color:#e11d48" id="lowAttendanceList"></div></div>
+        </div>
+
+        <!-- Charts -->
+        <section class="grid lg:grid-cols-5 gap-6">
+          <div class="bg-white rounded-2xl border border-slate-100 p-6 lg:col-span-3">
+            <h3 class="font-display font-bold">Subject-wise Attendance</h3>
+            <p class="text-xs text-slate-500 mb-4">Current semester · 75% required threshold shown</p>
+            <div style="position:relative;height:280px"><canvas id="subjChart"></canvas></div>
+          </div>
+          <div class="bg-white rounded-2xl border border-slate-100 p-6 lg:col-span-2 flex flex-col">
+            <h3 class="font-display font-bold">Attendance Method Split</h3>
+            <p class="text-xs text-slate-500 mb-4">How you marked attendance this month</p>
+            <div style="position:relative;flex:1;min-height:220px"><canvas id="methodChart"></canvas></div>
+            <div class="mt-4 grid grid-cols-3 gap-2 text-center text-xs">
+              <div class="p-2 rounded-lg" style="background:#eef4ff"><div class="font-bold" style="color:#3b6ef5">52%</div><div class="text-slate-500 mt-0.5">QR Code</div></div>
+              <div class="p-2 rounded-lg" style="background:#ecfeff"><div class="font-bold" style="color:#06b6d4">28%</div><div class="text-slate-500 mt-0.5">Face ID</div></div>
+              <div class="p-2 rounded-lg" style="background:#f5f3ff"><div class="font-bold" style="color:#7c3aed">20%</div><div class="text-slate-500 mt-0.5">Biometric</div></div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Subject table -->
+        <section class="bg-white rounded-2xl border border-slate-100 overflow-hidden">
+          <div class="p-5 border-b border-slate-100 flex flex-wrap items-center justify-between gap-3">
+            <div><h3 class="font-display font-bold">Subject Breakdown</h3><p class="text-xs text-slate-500">All subjects · current semester</p></div>
+            <input id="repSearch" type="text" placeholder="Search subject…" class="px-3 py-2 rounded-lg border border-slate-200 text-sm w-full sm:w-64 outline-none focus:ring-2 focus:ring-primary-200">
+          </div>
+          <div class="overflow-x-auto">
+            <table class="w-full text-sm">
+              <thead class="bg-slate-50 text-xs text-slate-500 uppercase tracking-wider">
+                <tr>
+                  <th class="text-left p-4">Subject &amp; Progress</th>
+                  <th class="text-left p-4 hidden sm:table-cell">Faculty</th>
+                  <th class="text-center p-4">Attended</th>
+                  <th class="text-center p-4">Total</th>
+                  <th class="text-center p-4">%</th>
+                  <th class="text-center p-4">Status</th>
+                </tr>
+              </thead>
+              <tbody id="subjTable"></tbody>
+            </table>
+          </div>
+        </section>
+
+      </div>
+    </main>
+  </div>
+</div><!-- /page-reports -->
+
+<!-- ===================== NOTIFICATIONS PAGE ===================== -->
+<div id="page-notifications" class="page hidden bg-slate-50">
+  <div class="flex">
+    <aside class="sidebar fixed lg:sticky top-0 inset-y-0 left-0 w-64 bg-gradient-to-b from-primary-900 via-primary-900 to-slate-900 text-white p-4 z-40 -translate-x-full lg:translate-x-0 transition-transform h-screen">
+      <a onclick="showPage('landing')" class="flex items-center gap-2 p-2 mb-6 cursor-pointer"><div class="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center"><i class="fa-solid fa-graduation-cap"></i></div><div><div class="font-display font-bold leading-none">SmartAttend</div><div class="text-[10px] text-primary-200 uppercase tracking-wider sidebar-role">Portal</div></div></a>
+      <nav class="space-y-1 sidebar-nav"></nav>
+      <div class="absolute bottom-4 left-4 right-4"><div class="p-3 rounded-xl bg-white/5 border border-white/10"><div class="flex items-center gap-3"><div class="w-10 h-10 rounded-full bg-gradient-to-br from-primary-400 to-cyan-400 flex items-center justify-center font-bold user-avatar">U</div><div class="flex-1 min-w-0"><div class="font-semibold text-sm truncate user-name">User</div><div class="text-[10px] text-primary-200 truncate user-sub">ID</div></div></div><button onclick="SmartAttend.logout()" class="w-full mt-3 text-xs py-1.5 rounded-lg bg-white/10 hover:bg-white/20"><i class="fa-solid fa-right-from-bracket mr-1"></i> Logout</button></div></div>
+    </aside>
+    <main class="flex-1 min-h-screen">
+      <header class="sticky top-0 z-30 bg-white/80 backdrop-blur border-b border-slate-200 px-4 sm:px-6 py-3">
+        <div class="flex items-center gap-3"><button class="menu-btn lg:hidden p-2 rounded-lg hover:bg-slate-100"><i class="fa-solid fa-bars"></i></button><div><h1 class="font-display font-bold text-lg sm:text-xl text-primary-900">Notifications</h1><p class="text-xs text-slate-500">Recent updates from your classes & faculty</p></div></div>
+      </header>
+      <div class="p-4 sm:p-6 max-w-3xl">
+        <div class="bg-white rounded-2xl border border-slate-100 divide-y divide-slate-100">
+          <div class="p-5 flex gap-4 hover:bg-slate-50 transition"><div class="w-10 h-10 rounded-full bg-rose-100 text-rose-600 flex items-center justify-center flex-shrink-0"><i class="fa-solid fa-triangle-exclamation"></i></div><div class="flex-1"><div class="flex items-start justify-between gap-2"><h4 class="font-semibold">Microcontrollers class cancelled today</h4><span class="text-[11px] text-slate-400 whitespace-nowrap">5m ago</span></div><p class="text-sm text-slate-600 mt-1">Prof. Anita Shenoy will not be able to take the 11:15 AM class. Please use the free period productively.</p><div class="mt-2"><span class="text-[10px] px-2 py-0.5 rounded-full bg-rose-100 text-rose-700 font-bold uppercase tracking-wider">Class Cancelled</span></div></div><span class="w-2 h-2 rounded-full bg-primary-500 flex-shrink-0 mt-2"></span></div>
+          <div class="p-5 flex gap-4 hover:bg-slate-50 transition"><div class="w-10 h-10 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center flex-shrink-0"><i class="fa-solid fa-circle-check"></i></div><div class="flex-1"><div class="flex items-start justify-between gap-2"><h4 class="font-semibold">Free slot claimed by Dr. Rajesh Kumar</h4><span class="text-[11px] text-slate-400 whitespace-nowrap">25m ago</span></div><p class="text-sm text-slate-600 mt-1">Dr. Kumar will conduct a Control Systems tutorial during the 12:15 free period. Room E-204.</p><div class="mt-2"><span class="text-[10px] px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 font-bold uppercase tracking-wider">Slot Claimed</span></div></div><span class="w-2 h-2 rounded-full bg-primary-500 flex-shrink-0 mt-2"></span></div>
+          <div class="p-5 flex gap-4 hover:bg-slate-50 transition"><div class="w-10 h-10 rounded-full bg-primary-100 text-primary-600 flex items-center justify-center flex-shrink-0"><i class="fa-solid fa-qrcode"></i></div><div class="flex-1"><div class="flex items-start justify-between gap-2"><h4 class="font-semibold">Attendance marked: Digital Signal Processing</h4><span class="text-[11px] text-slate-400 whitespace-nowrap">1h ago</span></div><p class="text-sm text-slate-600 mt-1">You were marked present via QR Code at 10:02 AM.</p></div><span class="w-2 h-2 rounded-full bg-primary-500 flex-shrink-0 mt-2"></span></div>
+          <div class="p-5 flex gap-4 hover:bg-slate-50 transition opacity-70"><div class="w-10 h-10 rounded-full bg-violet-100 text-violet-600 flex items-center justify-center flex-shrink-0"><i class="fa-solid fa-lightbulb"></i></div><div class="flex-1"><div class="flex items-start justify-between gap-2"><h4 class="font-semibold">New activity recommended</h4><span class="text-[11px] text-slate-400 whitespace-nowrap">3h ago</span></div><p class="text-sm text-slate-600 mt-1">Based on your goals, try "NPTEL: Signals & Systems" lecture during your free period.</p></div></div>
+          <div class="p-5 flex gap-4 hover:bg-slate-50 transition opacity-70"><div class="w-10 h-10 rounded-full bg-amber-100 text-amber-600 flex items-center justify-center flex-shrink-0"><i class="fa-solid fa-bell"></i></div><div class="flex-1"><div class="flex items-start justify-between gap-2"><h4 class="font-semibold">Attendance below 75% warning</h4><span class="text-[11px] text-slate-400 whitespace-nowrap">Yesterday</span></div><p class="text-sm text-slate-600 mt-1">Your Biology for Engineers attendance is at 72%. Please attend upcoming classes.</p></div></div>
+        </div>
+      </div>
+    </main>
+  </div>
+</div><!-- /page-notifications -->
+
+<script>
+/* ============= SMARTATTEND CORE ============= */
+const SmartAttend = {
+  accounts: {
+    student: { id:'student', name:'Alisa C. Fernandes', usn:'4SO24EC007', role:'student', email:'alisa@sjec.ac.in' },
+    faculty: { id:'faculty', name:'Dr. Ramesh Pai', role:'faculty', email:'ramesh.pai@sjec.ac.in', dept:'ECE' }
+  },
+  subjects: [
+    { code:'22EC41', name:'Digital Signal Processing', faculty:'Dr. Ramesh Pai',     credits:4, color:'primary' },
+    { code:'22EC42', name:'Microcontrollers',           faculty:'Prof. Anita Shenoy', credits:4, color:'cyan'    },
+    { code:'22EC43', name:'Control Systems',            faculty:'Dr. Rajesh Kumar',   credits:3, color:'violet'  },
+    { code:'22EC44', name:'Electromagnetic Waves',      faculty:'Prof. Sunita Rao',   credits:3, color:'emerald' },
+    { code:'22CTE48',name:'Computational Tools',        faculty:'Prof. Manoj K',      credits:2, color:'orange'  },
+    { code:'22BIO45',name:'Biology for Engineers',      faculty:'Dr. Priya Nair',     credits:2, color:'rose'    }
+  ],
+  activities: [
+    { title:'LeetCode: Two Sum',        type:'Coding',   duration:'30 min', difficulty:'Easy',     icon:'fa-code',           color:'emerald', url:'https://leetcode.com/problems/two-sum/' },
+    { title:'Aptitude: Time & Work',    type:'Aptitude', duration:'20 min', difficulty:'Medium',   icon:'fa-calculator',     color:'orange',  url:'https://www.indiabix.com/aptitude/time-and-work/' },
+    { title:'CS50 Lecture 3',           type:'Course',   duration:'45 min', difficulty:'Beginner', icon:'fa-graduation-cap', color:'primary', url:'https://cs50.harvard.edu/' },
+    { title:'Mock Interview: HR Round', type:'Career',   duration:'25 min', difficulty:'Medium',   icon:'fa-briefcase',      color:'violet',  url:'#' },
+    { title:'NPTEL: Signals & Systems', type:'Course',   duration:'60 min', difficulty:'Advanced', icon:'fa-tower-broadcast',color:'cyan',    url:'https://nptel.ac.in/' },
+    { title:'GeeksforGeeks: Arrays',    type:'Coding',   duration:'40 min', difficulty:'Medium',   icon:'fa-laptop-code',    color:'emerald', url:'https://www.geeksforgeeks.org/array-data-structure/' },
+    { title:'Aptitude: Probability',    type:'Aptitude', duration:'30 min', difficulty:'Hard',     icon:'fa-dice',           color:'orange',  url:'#' },
+    { title:'Resume Builder Workshop',  type:'Career',   duration:'35 min', difficulty:'Easy',     icon:'fa-file-lines',     color:'violet',  url:'#' }
+  ],
+  timetable: {
+    Mon: ['22EC41','22EC42','BREAK','22EC43','22EC44','22CTE48'],
+    Tue: ['22EC42','22EC41','BREAK','22BIO45','22EC44','FREE'],
+    Wed: ['22EC43','22EC42','BREAK','22EC41','LAB','LAB'],
+    Thu: ['22EC44','22EC43','BREAK','22EC42','22CTE48','FREE'],
+    Fri: ['22EC41','22BIO45','BREAK','LAB','LAB','22EC43']
+  },
+  periodTimes: ['9:00-10:00','10:00-11:00','11:00-11:15','11:15-12:15','12:15-1:15','2:00-3:00'],
+  saveSession(user) { localStorage.setItem('sa_user', JSON.stringify(user)); },
+  getSession()      { try { return JSON.parse(localStorage.getItem('sa_user')); } catch(e){ return null; } },
+  logout()          { localStorage.removeItem('sa_user'); showPage('landing'); },
+  toast(msg, type='success', timeout=2500) {
+    const el = document.createElement('div');
+    el.className = `toast ${type}`;
+    el.innerHTML = `<i class="fa-solid ${type==='success'?'fa-circle-check':type==='error'?'fa-circle-xmark':'fa-circle-info'}"></i> <span>${msg}</span>`;
+    document.body.appendChild(el);
+    requestAnimationFrame(()=> el.classList.add('show'));
+    setTimeout(()=> { el.classList.remove('show'); setTimeout(()=> el.remove(), 400); }, timeout);
+  },
+  getAttendance() { try { return JSON.parse(localStorage.getItem('sa_attendance')) || []; } catch(e){ return []; } },
+  addAttendance(rec) {
+    const list = SmartAttend.getAttendance();
+    list.unshift({ ...rec, ts: Date.now() });
+    localStorage.setItem('sa_attendance', JSON.stringify(list.slice(0,200)));
+  },
+  getSubject(code) { return this.subjects.find(s => s.code === code); }
+};
+window.SmartAttend = SmartAttend;
+
+/* ============= API LAYER ============= */
+const API_BASE = 'http://localhost:5000';
+
+const API = {
+  async call(endpoint, method = 'GET', body = null) {
+    const token = localStorage.getItem('sa_token');
+    const opts = {
+      method,
+      headers: {
+        'Content-Type': 'application/json',
+        ...(token ? { 'Authorization': 'Bearer ' + token } : {})
+      },
+      ...(body ? { body: JSON.stringify(body) } : {})
+    };
+    const res = await fetch(API_BASE + endpoint, opts);
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
+    return data;
+  },
+  get:    (ep)       => API.call(ep),
+  post:   (ep, body) => API.call(ep, 'POST',   body),
+  put:    (ep, body) => API.call(ep, 'PUT',    body),
+  delete: (ep)       => API.call(ep, 'DELETE'),
+
+  async isBackendAvailable() {
+    try {
+      await fetch(API_BASE + '/api/health', { signal: AbortSignal.timeout(1500) });
+      return true;
+    } catch { return false; }
+  }
+};
+window.API = API;
+
+// Patch SmartAttend logout to also clear token
+const _origLogout = SmartAttend.logout.bind(SmartAttend);
+SmartAttend.logout = function() {
+  localStorage.removeItem('sa_token');
+  _origLogout();
+};
+let _pc = null; // current page container
+let _cameraStream = null;
+let _countdownInterval = null;
+
+function showPage(pageId) {
+  // Stop camera
+  if (_cameraStream) { _cameraStream.getTracks().forEach(t => t.stop()); _cameraStream = null; }
+  // Clear countdown
+  if (_countdownInterval && pageId !== 'attendance') { clearInterval(_countdownInterval); _countdownInterval = null; }
+  // Hide all pages
+  document.querySelectorAll('.page').forEach(p => p.classList.add('hidden'));
+  _pc = document.getElementById('page-' + pageId);
+  if (!_pc) { console.warn('Page not found:', pageId); return; }
+  _pc.classList.remove('hidden');
+  window.scrollTo(0, 0);
+  initPage(pageId);
+}
+
+// Scoped query helpers
+function _$(id)    { return _pc ? _pc.querySelector('#'+id)  : document.getElementById(id); }
+function _qsa(sel) { return _pc ? _pc.querySelectorAll(sel)  : document.querySelectorAll(sel); }
+function _q(sel)   { return _pc ? _pc.querySelector(sel)     : document.querySelector(sel); }
+
+/* ============= SIDEBAR BUILDER ============= */
+function buildSidebar(isFaculty, activePage) {
+  const studentLinks = [
+    ['student-dashboard','Dashboard','fa-house'],
+    ['attendance','Mark Attendance','fa-qrcode'],
+    ['timetable','Timetable','fa-calendar-days'],
+    ['productivity','Productivity Hub','fa-lightbulb'],
+    ['reports','My Reports','fa-chart-line'],
+    ['notifications','Notifications','fa-bell'],
+  ];
+  const facultyLinks = [
+    ['faculty-dashboard','Dashboard','fa-house'],
+    ['students','Manage Students','fa-user-plus'],
+    ['attendance','Take Attendance','fa-qrcode'],
+    ['timetable','Timetable','fa-calendar-days'],
+    ['reports','Class Reports','fa-chart-line'],
+    ['notifications','Notifications','fa-bell'],
+  ];
+  const links = isFaculty ? facultyLinks : studentLinks;
+  const navEl = _q('.sidebar-nav');
+  if (navEl) {
+    navEl.innerHTML = links.map(([pid, label, icon]) =>
+      `<a onclick="showPage('${pid}')" class="sidebar-link ${pid===activePage?'active':''}"><i class="fa-solid ${icon}"></i> ${label}</a>`
+    ).join('');
+  }
+  const user = SmartAttend.getSession();
+  if (user) {
+    const initials = user.name.split(' ').map(w=>w[0]).slice(0,2).join('');
+    const av = _q('.user-avatar'); if(av) av.textContent = initials;
+    const un = _q('.user-name');  if(un) un.textContent = user.name;
+    const us = _q('.user-sub');   if(us) us.textContent = user.usn || user.email;
+  }
+  // Mobile menu
+  const menuBtn = _q('.menu-btn');
+  const sidebar  = _q('.sidebar');
+  if (menuBtn && sidebar) menuBtn.onclick = () => sidebar.classList.toggle('-translate-x-full');
+}
+
+/* ============= PAGE INIT DISPATCHER ============= */
+function initPage(pageId) {
+  const inits = {
+    landing:            initLanding,
+    login:              initLogin,
+    'student-dashboard':initStudentDashboard,
+    'faculty-dashboard':initFacultyDashboard,
+    students:           initStudents,
+    attendance:         initAttendance,
+    timetable:          initTimetable,
+    productivity:       initProductivity,
+    reports:            initReports,
+    notifications:      initNotifications,
+  };
+  if (inits[pageId]) inits[pageId]();
+}
+
+/* ============= LANDING ============= */
+function initLanding() {
+  const mobileBtn  = document.getElementById('landMobileBtn');
+  const mobileMenu = document.getElementById('landMobileMenu');
+  if (mobileBtn && mobileMenu) mobileBtn.onclick = () => mobileMenu.classList.toggle('hidden');
+  // QR mock grid
+  const grid = document.getElementById('qrMockGrid');
+  if (grid && !grid.dataset.built) {
+    grid.innerHTML = Array.from({length:25},(_,i)=>`<div class="aspect-square rounded ${Math.random()>0.45?'bg-primary-900':'bg-white'}"></div>`).join('');
+    grid.dataset.built = '1';
+  }
+  // Navbar scroll effect
+  const navbar = document.getElementById('navbar');
+  window.onscroll = () => {
+    if (navbar && document.getElementById('page-landing') && !document.getElementById('page-landing').classList.contains('hidden')) {
+      navbar.classList.toggle('shadow-md', window.scrollY > 30);
+    }
+  };
+}
+
+/* ============= LOGIN ============= */
+function initLogin() {
+  let role = 'student';
+  const tabStudent = _$('tabStudent'), tabFaculty = _$('tabFaculty');
+  const idLabel = _$('idLabel'), userId = _$('userId');
+
+  function setRole(r) {
+    role = r;
+    tabStudent.classList.toggle('active', r==='student');
+    tabFaculty.classList.toggle('active', r==='faculty');
+    tabStudent.classList.toggle('text-slate-500', r!=='student');
+    tabFaculty.classList.toggle('text-slate-500', r!=='faculty');
+    if (r==='student') { idLabel.textContent='USN / Student ID'; userId.value='4SO24EC007'; }
+    else               { idLabel.textContent='Faculty ID / Email'; userId.value='ramesh.pai@sjec.ac.in'; }
+  }
+  tabStudent.onclick = () => setRole('student');
+  tabFaculty.onclick = () => setRole('faculty');
+
+  _$('togglePwd').onclick = () => {
+    const pwd = _$('password'), icon = _$('togglePwd').querySelector('i');
+    if (pwd.type==='password') { pwd.type='text'; icon.className='fa-solid fa-eye-slash'; }
+    else                       { pwd.type='password'; icon.className='fa-solid fa-eye'; }
+  };
+
+  async function doLogin(biometric = false) {
+    const btn = biometric ? _$('biometricBtn') : _$('loginSubmit');
+    const uid = (_$('userId').value || '').trim();
+    const pwd = biometric ? 'demo123' : (_$('password').value || '').trim();
+
+    if (!uid) { SmartAttend.toast('Please enter your User ID', 'error'); return; }
+    btn.disabled = true;
+    const origHTML = btn.innerHTML;
+    btn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin mr-2"></i>Signing in…';
+
+    try {
+      // Try real API first
+      const backendUp = await API.isBackendAvailable();
+      let user;
+      if (backendUp) {
+        const res = await API.post('/api/login', { userId: uid, password: pwd });
+        localStorage.setItem('sa_token', res.token);
+        user = res.user;
+        SmartAttend.saveSession(user);
+        SmartAttend.toast(`Welcome, ${user.name.split(' ')[0]}! (Live DB)`);
+      } else {
+        // Demo fallback when Flask isn't running
+        const demoRole = role;
+        user = SmartAttend.accounts[demoRole];
+        if (!user) throw new Error('Invalid credentials');
+        SmartAttend.saveSession(user);
+        SmartAttend.toast(`Welcome (demo mode — start Flask for live DB)`);
+      }
+      setTimeout(() => showPage(user.role === 'student' ? 'student-dashboard' : 'faculty-dashboard'), 600);
+    } catch(err) {
+      SmartAttend.toast(err.message || 'Login failed', 'error');
+    } finally {
+      btn.disabled = false;
+      btn.innerHTML = origHTML;
+    }
+  }
+
+  _$('loginSubmit').onclick  = () => doLogin(false);
+  _$('biometricBtn').onclick = () => {
+    SmartAttend.toast('Scanning fingerprint…', 'info', 1200);
+    setTimeout(() => doLogin(true), 1000);
+  };
+}
+
+/* ============= STUDENT DASHBOARD ============= */
+function initStudentDashboard() {
+  const user = SmartAttend.getSession();
+  if (!user || user.role !== 'student') { showPage('login'); return; }
+  buildSidebar(false, 'student-dashboard');
+
+  // Greeting & date
+  const hour = new Date().getHours();
+  const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
+  const gt = _q('#sdGreetingTime'); if(gt) gt.textContent = greeting;
+  const fn = _q('.first-name');     if(fn) fn.textContent = user.name.split(' ')[0];
+  const dl = _q('.date-label');     if(dl) dl.textContent = new Date().toLocaleDateString('en-IN',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
+
+  // Fixed subject attendance data (matches reports page)
+  const fixedPct = [96, 72, 88, 81, 94, 70];
+  const subjData = SmartAttend.subjects.map((s,i) => ({...s, pct: fixedPct[i]}));
+  const overallPct = Math.round(subjData.reduce((a,s)=>a+s.pct,0) / subjData.length);
+
+  // Stat cards
+  const sa = _$('sdStatAtt');    if(sa) sa.textContent = overallPct+'%';
+  const sb = _$('sdStatAttBar'); if(sb) sb.style.width = overallPct+'%';
+
+  // Next class
+  const dayMap = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  const todayKey = ['Sat','Sun'].includes(dayMap[new Date().getDay()]) ? 'Mon' : dayMap[new Date().getDay()];
+  const schedule = SmartAttend.timetable[todayKey] || [];
+  const nonBreak = schedule.filter(c => c !== 'BREAK' && c !== 'FREE');
+  const nextSubj = SmartAttend.getSubject(nonBreak[1] || nonBreak[0]);
+  const nc = _$('sdNextClass'); if(nc) nc.textContent = nextSubj ? nextSubj.name : 'No class upcoming';
+  const nt = _$('sdNextTime');  if(nt) nt.textContent = SmartAttend.periodTimes[1] || '';
+
+  // Today stat sub-label
+  const sts = _$('sdStatToday');    if(sts) sts.textContent = nonBreak.length;
+  const stl = _$('sdStatTodaySub'); if(stl) stl.textContent = `${todayKey} · ECE-A`;
+
+  // Attendance ring animation
+  const ring = _$('sdAttRing');
+  const pctEl = _$('sdAttPct');
+  if(ring) {
+    const circ = 2 * Math.PI * 44; // r=44
+    const offset = circ * (1 - overallPct/100);
+    setTimeout(() => { ring.style.transition='stroke-dashoffset 1s ease'; ring.style.strokeDashoffset = offset; }, 200);
+  }
+  if(pctEl) pctEl.textContent = overallPct+'%';
+
+  // Today's classes
+  const todayEl = _$('todayClasses');
+  if (todayEl) {
+    const colorMap = {primary:'#3b6ef5',cyan:'#06b6d4',violet:'#7c3aed',emerald:'#059669',orange:'#ea580c',rose:'#e11d48'};
+    const bgMap    = {primary:'#eef4ff',cyan:'#ecfeff',violet:'#f5f3ff',emerald:'#ecfdf5',orange:'#fff7ed',rose:'#fff1f2'};
+    todayEl.innerHTML = schedule.map((code,i) => {
+      if (code === 'BREAK') return `<div class="flex items-center gap-2 py-1 px-2"><div class="h-px flex-1 bg-slate-100"></div><span class="text-[10px] text-slate-400 font-semibold">☕ BREAK</span><div class="h-px flex-1 bg-slate-100"></div></div>`;
+      const subj = SmartAttend.getSubject(code);
+      const isFree = code === 'FREE', isLab = code === 'LAB';
+      const isNow = i === 1;
+      const col  = subj ? colorMap[subj.color] : '#94a3b8';
+      const bg   = subj ? bgMap[subj.color]    : '#f8fafc';
+      const name = subj ? subj.name : isLab ? '🔬 Lab Session' : '📋 Free Period';
+      return `<div class="flex items-center gap-3 p-2.5 rounded-xl transition" style="${isNow?`background:${bg};border:1.5px solid ${col}20`:'background:#f8fafc'}">
+        <div class="w-9 h-9 rounded-lg flex items-center justify-center text-[11px] font-bold text-white flex-shrink-0" style="background:${isNow?col:'#cbd5e1'}">${i+1}</div>
+        <div class="flex-1 min-w-0">
+          <div class="font-semibold text-sm truncate" style="${isNow?`color:${col}`:''}">${name}</div>
+          <div class="text-[11px] text-slate-400">${SmartAttend.periodTimes[i]}</div>
+        </div>
+        ${isNow ? `<span class="text-[9px] px-2 py-0.5 rounded-full font-bold text-white animate-pulse flex-shrink-0" style="background:#10b981">NOW</span>` : ''}
+      </div>`;
+    }).join('');
+  }
+
+  // Subjects list — inline styles only
+  const subjEl = _$('subjectList');
+  if (subjEl) {
+    const colorMap = {
+      primary:{bg:'#eef4ff',text:'#3b6ef5'},cyan:{bg:'#ecfeff',text:'#0891b2'},
+      violet:{bg:'#f5f3ff',text:'#7c3aed'},emerald:{bg:'#ecfdf5',text:'#059669'},
+      orange:{bg:'#fff7ed',text:'#ea580c'},rose:{bg:'#fff1f2',text:'#e11d48'}
+    };
+    subjEl.innerHTML = subjData.map(s => {
+      const c = colorMap[s.color] || {bg:'#f1f5f9',text:'#64748b'};
+      const barColor = s.pct>=85?'#10b981':s.pct>=75?'#f59e0b':'#ef4444';
+      const pctColor = s.pct>=85?'#059669':s.pct>=75?'#d97706':'#dc2626';
+      return `<div class="flex items-center gap-3 p-2.5 rounded-xl hover:bg-slate-50 transition">
+        <div class="w-9 h-9 rounded-lg flex items-center justify-center text-[10px] font-bold flex-shrink-0" style="background:${c.bg};color:${c.text}">${s.code.slice(-2)}</div>
+        <div class="flex-1 min-w-0">
+          <div class="font-semibold text-sm truncate">${s.name}</div>
+          <div style="width:100%;height:4px;background:#f1f5f9;border-radius:4px;margin-top:5px;overflow:hidden">
+            <div style="width:${s.pct}%;height:100%;background:${barColor};border-radius:4px;transition:width .8s ease"></div>
+          </div>
+        </div>
+        <div class="text-right flex-shrink-0">
+          <div class="text-sm font-bold" style="color:${pctColor}">${s.pct}%</div>
+          <div class="text-[10px] text-slate-400">${s.credits} cr</div>
+        </div>
+      </div>`;
+    }).join('');
+  }
+
+  // Suggested activities — inline styles only
+  const actEl = _$('suggestedActs');
+  if (actEl) {
+    const colMap = {emerald:{bg:'#ecfdf5',text:'#059669'},orange:{bg:'#fff7ed',text:'#ea580c'},
+      primary:{bg:'#eef4ff',text:'#3b6ef5'},violet:{bg:'#f5f3ff',text:'#7c3aed'},cyan:{bg:'#ecfeff',text:'#0891b2'}};
+    actEl.innerHTML = SmartAttend.activities.slice(0,4).map(a => {
+      const c = colMap[a.color] || {bg:'#f1f5f9',text:'#475569'};
+      return `<a href="${a.url}" target="_blank" class="flex items-center gap-3 p-3 rounded-xl border border-slate-100 hover:shadow-md transition" style="text-decoration:none">
+        <div class="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0" style="background:${c.bg};color:${c.text}"><i class="fa-solid ${a.icon}"></i></div>
+        <div class="flex-1 min-w-0">
+          <div class="font-semibold text-sm truncate text-slate-800">${a.title}</div>
+          <div class="text-[11px] text-slate-500">${a.type} · ${a.duration}</div>
+        </div>
+        <span class="text-[10px] font-bold px-2 py-0.5 rounded-full flex-shrink-0" style="background:${c.bg};color:${c.text}">${a.difficulty}</span>
+      </a>`;
+    }).join('');
+  }
+
+  // Attendance Trend Chart
+  const canvas = _$('attendanceChart');
+  if (canvas) {
+    const existing = Chart.getChart(canvas); if(existing) existing.destroy();
+    new Chart(canvas, {
+      type: 'line',
+      data: {
+        labels: ['Mon','Tue','Wed','Thu','Fri','Sat','Today'],
+        datasets: [
+          { label:'Attended',  data:[5,4,6,5,6,3,4], borderColor:'#3b6ef5', backgroundColor:'rgba(59,110,245,0.08)', fill:true, tension:0.4, borderWidth:2.5, pointRadius:5, pointBackgroundColor:'#3b6ef5', pointBorderColor:'#fff', pointBorderWidth:2 },
+          { label:'Scheduled', data:[6,5,6,6,6,4,5], borderColor:'#e2e8f0', borderDash:[6,4], fill:false, tension:0.4, borderWidth:1.5, pointRadius:3, pointBackgroundColor:'#94a3b8' }
+        ]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { position:'bottom', labels:{ usePointStyle:true, font:{size:11}, padding:16 } },
+          tooltip: { callbacks:{ label: ctx => ` ${ctx.dataset.label}: ${ctx.raw} classes` } }
+        },
+        scales: {
+          y: { beginAtZero:true, max:7, ticks:{ stepSize:1, font:{size:11} }, grid:{ color:'#f8fafc' } },
+          x: { grid:{ display:false }, ticks:{ font:{size:11} } }
+        }
+      }
+    });
+  }
+}
+
+/* ============= FACULTY DASHBOARD ============= */
+function initFacultyDashboard() {
+  const user = SmartAttend.getSession();
+  if (!user || user.role !== 'faculty') { showPage('login'); return; }
+  buildSidebar(true, 'faculty-dashboard');
+
+  // Greeting & date
+  const hour = new Date().getHours();
+  const greeting = hour < 12 ? 'Good morning,' : hour < 17 ? 'Good afternoon,' : 'Good evening,';
+  const gt = _q('#fdGreetingTime'); if(gt) gt.textContent = greeting;
+  const fn = _q('.first-name');     if(fn) fn.textContent = user.name;
+  const dl = _q('.date-label');     if(dl) dl.textContent = new Date().toLocaleDateString('en-IN',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
+
+  // Trend chart with proper container
+  const tc = _$('trendChart');
+  if (tc) {
+    const ex = Chart.getChart(tc); if(ex) ex.destroy();
+    new Chart(tc, {
+      type: 'bar',
+      data: {
+        labels: ['Apr 10','Apr 12','Apr 14','Apr 17','Apr 19','Apr 21','Today'],
+        datasets: [
+          { label:'Present', data:[42,40,41,38,43,42,40], backgroundColor:'#3b6ef5', borderRadius:8, borderSkipped:false },
+          { label:'Absent',  data:[3,5,4,7,2,3,5],         backgroundColor:'#fecaca', borderRadius:8, borderSkipped:false }
+        ]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { position:'bottom', labels:{ usePointStyle:true, font:{size:11}, padding:16 } },
+          tooltip: { callbacks:{ label: ctx => ` ${ctx.dataset.label}: ${ctx.raw} students` } }
+        },
+        scales: {
+          y: { stacked:true, beginAtZero:true, max:50, grid:{ color:'#f8fafc' }, ticks:{ font:{size:11} } },
+          x: { stacked:true, grid:{ display:false }, ticks:{ font:{size:11} } }
+        }
+      }
+    });
+  }
+
+  // Roster data
+  const students = [
+    ['Alisa Carisma Fernandes','4SO24EC007'],['Apoorva Monteiro','4SO24EC010'],['Ashwin Madtha','4SO24EC017'],
+    ['Bhuvan Hegde','4SO24EC022'],['Chaithra Bhat','4SO24EC025'],['Deeksha Kamath','4SO24EC028'],
+    ['F Manasvi','4SO24EC035'],['Gaurav Shenoy','4SO24EC038'],['Hritika Naik','4SO24EC042'],
+    ['Ishaan Pai','4SO24EC045'],['Jeevith Rao','4SO24EC048'],['Kavya Bhandary','4SO24EC051'],
+    ['Lavanya Shetty','4SO24EC054'],['Mihir D Souza','4SO24EC057']
+  ];
+  const methods = ['QR Code','Face Recognition','Fingerprint'];
+  const methodIcons = { 'QR Code':'fa-qrcode', 'Face Recognition':'fa-face-smile', 'Fingerprint':'fa-fingerprint' };
+  const roster = students.map(([n,u],i) => ({ name:n, usn:u, present:Math.random()>0.15, method:methods[i%3] }));
+
+  const totalCountEl = _$('totalCount'); if(totalCountEl) totalCountEl.textContent = roster.length;
+
+  function renderRoster() {
+    const body = _$('rosterBody'); if(!body) return;
+    body.innerHTML = roster.map((r,i) => {
+      const presentBg  = '#d1fae5', presentCol = '#065f46';
+      const absentBg   = '#fee2e2', absentCol  = '#991b1b';
+      const rowBg      = r.present ? '' : 'style="background:#fffbfb"';
+      const initials   = r.name.split(' ').map(w=>w[0]).slice(0,2).join('');
+      return `<tr class="border-t border-slate-100 transition hover:bg-slate-50" ${rowBg}>
+        <td class="p-3 text-slate-400 text-sm">${i+1}</td>
+        <td class="p-3">
+          <div class="flex items-center gap-2">
+            <div class="w-8 h-8 rounded-full flex items-center justify-center text-[10px] font-bold text-white flex-shrink-0" style="background:${r.present?'#3b6ef5':'#94a3b8'}">${initials}</div>
+            <div class="font-semibold text-sm">${r.name}</div>
+          </div>
+        </td>
+        <td class="p-3 text-slate-500 font-mono text-xs hidden sm:table-cell">${r.usn}</td>
+        <td class="p-3 text-slate-400 text-xs hidden md:table-cell">
+          ${r.present ? `<span class="flex items-center gap-1"><i class="fa-solid ${methodIcons[r.method]} text-primary-400"></i> ${r.method}</span>` : '—'}
+        </td>
+        <td class="p-3 text-center">
+          <span style="background:${r.present?presentBg:absentBg};color:${r.present?presentCol:absentCol};padding:3px 10px;border-radius:99px;font-size:10px;font-weight:700;letter-spacing:.04em">
+            ${r.present ? '✓ Present' : '✗ Absent'}
+          </span>
+        </td>
+        <td class="p-3 text-center">
+          <button onclick="fdToggle(${i})" title="Toggle attendance"
+            style="background:${r.present?'#fff1f2':'#ecfdf5'};color:${r.present?'#e11d48':'#059669'};border:1.5px solid ${r.present?'#fecdd3':'#a7f3d0'};padding:4px 10px;border-radius:8px;font-size:11px;font-weight:600;cursor:pointer;transition:all .15s">
+            ${r.present ? 'Mark Absent' : 'Mark Present'}
+          </button>
+        </td>
+      </tr>`;
+    }).join('');
+    const pc = _$('presentCount'); if(pc) pc.textContent = roster.filter(r=>r.present).length;
+  }
+
+  window.fdToggle = (i) => {
+    roster[i].present = !roster[i].present;
+    SmartAttend.toast(roster[i].present ? `${roster[i].name.split(' ')[0]} marked present` : `${roster[i].name.split(' ')[0]} marked absent`, roster[i].present?'success':'error', 1500);
+    renderRoster();
+  };
+  renderRoster();
+
+  const mab = _$('markAllBtn');
+  if (mab) mab.onclick = () => { roster.forEach(r=>r.present=true); renderRoster(); SmartAttend.toast('All 14 students marked present ✓'); };
+  const nb = _$('fdNotifyBtn'); if(nb) nb.onclick = () => document.getElementById('modalNotify').classList.remove('hidden');
+  const cb = _$('fdClaimBtn');  if(cb) cb.onclick = () => document.getElementById('modalClaim').classList.remove('hidden');
+}
+
+/* ============= STUDENTS MANAGEMENT ============= */
+let _smStudents = [];   // cached list
+let _smBackend  = false;
+
+function smSetStatus(msg, ok) {
+  const el = _$('smApiStatus');
+  if (!el) return;
+  el.classList.remove('hidden');
+  el.textContent = msg;
+  el.style.cssText = ok
+    ? 'background:#d1fae5;color:#065f46'
+    : 'background:#fee2e2;color:#991b1b';
+}
+
+function smLoading(on) {
+  const sp = _$('smLoadingSpinner');
+  if (sp) sp.classList.toggle('hidden', !on);
+}
+
+function smRenderTable(students) {
+  const body     = _$('smTableBody');
+  const subtitle = _$('smTableSubtitle');
+  if (!body) return;
+  if (subtitle) subtitle.textContent = `${students.length} student${students.length!==1?'s':''} found`;
+
+  if (!students.length) {
+    body.innerHTML = `<tr><td colspan="7" class="p-10 text-center text-slate-400">No students found. Add one using the button above.</td></tr>`;
+    return;
+  }
+  body.innerHTML = students.map(s => {
+    const activeBg  = s.is_active ? '#d1fae5' : '#fee2e2';
+    const activeCol = s.is_active ? '#065f46' : '#991b1b';
+    const activeLabel = s.is_active ? 'Active' : 'Inactive';
+    const initials  = s.name.split(' ').map(w=>w[0]).slice(0,2).join('');
+    return `<tr class="border-t border-slate-100 hover:bg-slate-50 transition ${!s.is_active?'opacity-60':''}">
+      <td class="p-4">
+        <div class="flex items-center gap-3">
+          <div class="w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold text-white flex-shrink-0" style="background:#3b6ef5">${initials}</div>
+          <div class="font-semibold text-sm">${s.name}</div>
+        </div>
+      </td>
+      <td class="p-4 font-mono text-xs text-slate-600 hidden sm:table-cell">${s.usn || '—'}</td>
+      <td class="p-4 text-xs text-slate-500 hidden md:table-cell">${s.email}</td>
+      <td class="p-4 text-center text-sm">
+        <span class="font-semibold">Sem ${s.semester}</span>
+        <span class="text-slate-400"> · </span>
+        <span class="font-semibold">Sec ${s.section}</span>
+      </td>
+      <td class="p-4 text-center">
+        <span style="background:${activeBg};color:${activeCol};padding:3px 10px;border-radius:99px;font-size:10px;font-weight:700;letter-spacing:.04em">${activeLabel}</span>
+      </td>
+      <td class="p-4 text-center text-xs text-slate-500">${s.created_at}</td>
+      <td class="p-4 text-center">
+        <div class="flex items-center justify-center gap-1">
+          <button onclick="smOpenEdit(${s.id})" title="Edit"
+            class="p-2 rounded-lg hover:bg-primary-50 transition"
+            style="color:#3b6ef5">
+            <i class="fa-solid fa-pen-to-square text-sm"></i>
+          </button>
+          ${s.is_active
+            ? `<button onclick="smOpenDelete(${s.id},'${s.name.replace(/'/g,"\\'")}',false)" title="Deactivate"
+                class="p-2 rounded-lg hover:bg-rose-50 transition" style="color:#e11d48">
+                <i class="fa-solid fa-user-slash text-sm"></i>
+              </button>`
+            : `<button onclick="smOpenDelete(${s.id},'${s.name.replace(/'/g,"\\'")}',true)" title="Restore"
+                class="p-2 rounded-lg hover:bg-emerald-50 transition" style="color:#059669">
+                <i class="fa-solid fa-user-check text-sm"></i>
+              </button>`
+          }
+        </div>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+function smUpdateStats(students) {
+  const active = students.filter(s=>s.is_active);
+  const el = id => _$(id);
+  const now = new Date();
+  const thisMonth = students.filter(s => {
+    const d = new Date(s.created_at);
+    return d.getMonth()===now.getMonth() && d.getFullYear()===now.getFullYear();
+  });
+  if(el('smTotalCount'))  el('smTotalCount').textContent  = active.length;
+  if(el('smSecACount'))   el('smSecACount').textContent   = active.filter(s=>s.section==='A').length;
+  if(el('smSecBCount'))   el('smSecBCount').textContent   = active.filter(s=>s.section==='B').length;
+  if(el('smNewCount'))    el('smNewCount').textContent    = thisMonth.length;
+}
+
+function smApplyFilter() {
+  const q   = (_$('smSearch')?.value    || '').toLowerCase();
+  const sec = (_$('smFilterSec')?.value || '');
+  const sem = (_$('smFilterSem')?.value || '');
+  let list  = _smStudents;
+  if (q)   list = list.filter(s => s.name.toLowerCase().includes(q) || (s.usn||'').toLowerCase().includes(q));
+  if (sec) list = list.filter(s => s.section === sec);
+  if (sem) list = list.filter(s => String(s.semester) === sem);
+  smRenderTable(list);
+}
+
+async function smLoadStudents() {
+  smLoading(true);
+  try {
+    if (_smBackend) {
+      _smStudents = await API.get('/api/students');
+      smSetStatus('● Live database', true);
+    } else {
+      // Demo fallback
+      _smStudents = [
+        {id:1,name:'Alisa Carisma Fernandes',usn:'4SO24EC007',email:'alisa@sjec.ac.in',semester:4,section:'A',is_active:true,created_at:'01 Jan 2025'},
+        {id:2,name:'Apoorva Monteiro',usn:'4SO24EC010',email:'apoorva@sjec.ac.in',semester:4,section:'A',is_active:true,created_at:'01 Jan 2025'},
+        {id:3,name:'Ashwin Madtha',usn:'4SO24EC017',email:'ashwin@sjec.ac.in',semester:4,section:'A',is_active:true,created_at:'01 Jan 2025'},
+        {id:4,name:'F Manasvi',usn:'4SO24EC035',email:'manasvi@sjec.ac.in',semester:4,section:'A',is_active:true,created_at:'01 Jan 2025'},
+        {id:5,name:'Bhuvan Hegde',usn:'4SO24EC022',email:'bhuvan@sjec.ac.in',semester:4,section:'B',is_active:true,created_at:'01 Jan 2025'},
+        {id:6,name:'Chaithra Bhat',usn:'4SO24EC025',email:'chaithra@sjec.ac.in',semester:4,section:'B',is_active:false,created_at:'01 Jan 2025'},
+      ];
+      smSetStatus('● Demo mode (Flask not running)', false);
+    }
+    smUpdateStats(_smStudents);
+    smApplyFilter();
+  } catch(err) {
+    SmartAttend.toast('Failed to load students: ' + err.message, 'error');
+  } finally {
+    smLoading(false);
+  }
+}
+
+// ── Add modal ────────────────────────────────────────────────────────────────
+window.smCloseAdd = () => {
+  document.getElementById('smAddModal').classList.add('hidden');
+  ['smName','smUsn','smEmail','smPassword'].forEach(id => { const el = document.getElementById(id); if(el) el.value=''; });
+  const err = document.getElementById('smAddError'); if(err){ err.classList.add('hidden'); err.textContent=''; }
+};
+window.smSubmitAdd = async () => {
+  const btn  = document.getElementById('smAddSubmit');
+  const name = (document.getElementById('smName')?.value     || '').trim();
+  const usn  = (document.getElementById('smUsn')?.value      || '').trim();
+  const email= (document.getElementById('smEmail')?.value    || '').trim();
+  const pwd  = (document.getElementById('smPassword')?.value || '').trim();
+  const sem  = document.getElementById('smSemester')?.value  || '4';
+  const sec  = document.getElementById('smSection')?.value   || 'A';
+  const errEl= document.getElementById('smAddError');
+
+  const showErr = msg => { errEl.textContent=msg; errEl.classList.remove('hidden'); };
+  if(!name||!usn||!email||!pwd) { showErr('All fields are required'); return; }
+  if(pwd.length<6)              { showErr('Password must be at least 6 characters'); return; }
+  errEl.classList.add('hidden');
+
+  btn.disabled=true; btn.innerHTML='<i class="fa-solid fa-circle-notch fa-spin mr-2"></i>Adding…';
+  try {
+    if (_smBackend) {
+      const res = await API.post('/api/students', {name,usn,email,password:pwd,semester:parseInt(sem),section:sec});
+      _smStudents.unshift(res.student);
+    } else {
+      // demo mode — add locally
+      const newS = {id: Date.now(), name, usn:usn.toUpperCase(), email, semester:parseInt(sem), section:sec, is_active:true, created_at: new Date().toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'})};
+      _smStudents.unshift(newS);
+    }
+    smUpdateStats(_smStudents);
+    smApplyFilter();
+    smCloseAdd();
+    SmartAttend.toast(`${name} added successfully ✓`);
+  } catch(err) {
+    showErr(err.message || 'Failed to add student');
+  } finally {
+    btn.disabled=false; btn.innerHTML='<i class="fa-solid fa-user-plus mr-2"></i>Add Student';
+  }
+};
+window.smOpenAdd = () => document.getElementById('smAddModal').classList.remove('hidden');
+
+// ── Edit modal ────────────────────────────────────────────────────────────────
+window.smOpenEdit = (id) => {
+  const s = _smStudents.find(x=>x.id===id); if(!s) return;
+  document.getElementById('smEditId').value        = s.id;
+  document.getElementById('smEditName').value      = s.name;
+  document.getElementById('smEditEmail').value     = s.email;
+  document.getElementById('smEditSemester').value  = s.semester;
+  document.getElementById('smEditSection').value   = s.section;
+  document.getElementById('smEditPassword').value  = '';
+  document.getElementById('smEditSubtitle').textContent = `USN: ${s.usn}`;
+  const err = document.getElementById('smEditError'); err.classList.add('hidden'); err.textContent='';
+  document.getElementById('smEditModal').classList.remove('hidden');
+};
+window.smCloseEdit = () => document.getElementById('smEditModal').classList.add('hidden');
+window.smSubmitEdit = async () => {
+  const btn  = document.getElementById('smEditSubmit');
+  const id   = parseInt(document.getElementById('smEditId').value);
+  const name = document.getElementById('smEditName').value.trim();
+  const email= document.getElementById('smEditEmail').value.trim();
+  const sem  = document.getElementById('smEditSemester').value;
+  const sec  = document.getElementById('smEditSection').value;
+  const pwd  = document.getElementById('smEditPassword').value.trim();
+  const errEl= document.getElementById('smEditError');
+  const showErr = msg => { errEl.textContent=msg; errEl.classList.remove('hidden'); };
+
+  if(!name||!email) { showErr('Name and email are required'); return; }
+  if(pwd && pwd.length<6) { showErr('Password must be at least 6 characters'); return; }
+  errEl.classList.add('hidden');
+
+  btn.disabled=true; btn.innerHTML='<i class="fa-solid fa-circle-notch fa-spin mr-2"></i>Saving…';
+  try {
+    const payload = {name, email, semester:parseInt(sem), section:sec, ...(pwd?{password:pwd}:{})};
+    if (_smBackend) {
+      const res = await API.put(`/api/students/${id}`, payload);
+      const idx = _smStudents.findIndex(x=>x.id===id);
+      if(idx>=0) _smStudents[idx] = res.student;
+    } else {
+      const idx = _smStudents.findIndex(x=>x.id===id);
+      if(idx>=0) Object.assign(_smStudents[idx], {name, email, semester:parseInt(sem), section:sec});
+    }
+    smUpdateStats(_smStudents); smApplyFilter();
+    smCloseEdit();
+    SmartAttend.toast(`${name} updated ✓`);
+  } catch(err) {
+    showErr(err.message || 'Update failed');
+  } finally {
+    btn.disabled=false; btn.innerHTML='<i class="fa-solid fa-floppy-disk mr-2"></i>Save Changes';
+  }
+};
+
+// ── Delete/Restore modal ──────────────────────────────────────────────────────
+window.smOpenDelete = (id, name, isRestore) => {
+  document.getElementById('smDeleteId').value    = id;
+  document.getElementById('smDeleteName').textContent = name;
+  const confirmBtn = document.getElementById('smDeleteConfirm');
+  const modal      = document.getElementById('smDeleteModal');
+  const titleEl    = modal.querySelector('h3');
+  const descEl     = modal.querySelector('p');
+  if (isRestore) {
+    titleEl.textContent = 'Restore Student?';
+    descEl.innerHTML    = `This will restore <b>${name}</b>'s account so they can log in again.`;
+    confirmBtn.textContent = 'Restore';
+    confirmBtn.style.background = '#059669';
+    confirmBtn.dataset.restore  = '1';
+  } else {
+    titleEl.textContent = 'Deactivate Student?';
+    descEl.innerHTML    = `This will deactivate <b>${name}</b>'s account. Attendance records are preserved.`;
+    confirmBtn.textContent = 'Deactivate';
+    confirmBtn.style.background = '#e11d48';
+    confirmBtn.dataset.restore  = '0';
+  }
+  modal.classList.remove('hidden');
+};
+window.smCloseDelete = () => document.getElementById('smDeleteModal').classList.add('hidden');
+window.smSubmitDelete = async () => {
+  const id        = parseInt(document.getElementById('smDeleteId').value);
+  const isRestore = document.getElementById('smDeleteConfirm').dataset.restore === '1';
+  const s         = _smStudents.find(x=>x.id===id); if(!s) return;
+  try {
+    if (_smBackend) {
+      if (isRestore) await API.post(`/api/students/${id}/restore`);
+      else           await API.delete(`/api/students/${id}`);
+    }
+    const idx = _smStudents.findIndex(x=>x.id===id);
+    if(idx>=0) _smStudents[idx].is_active = isRestore;
+    smUpdateStats(_smStudents); smApplyFilter();
+    smCloseDelete();
+    SmartAttend.toast(isRestore ? `${s.name} restored ✓` : `${s.name} deactivated`);
+  } catch(err) {
+    SmartAttend.toast(err.message || 'Action failed', 'error');
+    smCloseDelete();
+  }
+};
+
+async function initStudents() {
+  const user = SmartAttend.getSession();
+  if (!user || user.role !== 'faculty') { showPage('login'); return; }
+  buildSidebar(true, 'students');
+
+  // Wire header button
+  const addBtn = _$('smOpenAddModal');
+  if (addBtn) addBtn.onclick = window.smOpenAdd;
+
+  // Search + filter events
+  const search = _$('smSearch');
+  if (search) search.oninput = smApplyFilter;
+  const fs = _$('smFilterSec'); if(fs) fs.onchange = smApplyFilter;
+  const fm = _$('smFilterSem'); if(fm) fm.onchange = smApplyFilter;
+  const rb = _$('smRefreshBtn'); if(rb) rb.onclick = smLoadStudents;
+
+  // Check backend
+  _smBackend = await API.isBackendAvailable();
+  await smLoadStudents();
+}
+
+/* ============= ATTENDANCE ============= */
+function initAttendance() {
+  const user = SmartAttend.getSession();
+  if (!user) { showPage('login'); return; }
+  const isFaculty = user.role === 'faculty';
+  buildSidebar(isFaculty, 'attendance');
+
+  // Tabs
+  _qsa('.method-tab').forEach(btn => {
+    btn.onclick = () => {
+      _qsa('.method-tab').forEach(b => { b.classList.remove('bg-primary-600','text-white'); b.classList.add('text-slate-500'); });
+      btn.classList.add('bg-primary-600','text-white'); btn.classList.remove('text-slate-500');
+      _qsa('.panel').forEach(p => p.classList.add('hidden'));
+      _pc.querySelector(`.panel[data-panel="${btn.dataset.tab}"]`).classList.remove('hidden');
+    };
+  });
+
+  // QR
+  const qrEl = _$('qrcode');
+  if (qrEl) {
+    qrEl.innerHTML = '';
+    new QRCode(qrEl, { text: JSON.stringify({cls:'22EC41',t:Date.now(),uid:user.usn||user.email}), width:220, height:220, colorDark:'#0c1b4d', colorLight:'#ffffff' });
+  }
+
+  // Countdown
+  if (_countdownInterval) clearInterval(_countdownInterval);
+  let secs = 165;
+  const cd = _$('countdown');
+  _countdownInterval = setInterval(() => {
+    if (!cd || secs <= 0) { if(cd) cd.textContent='00:00'; return; }
+    secs--;
+    const m = String(Math.floor(secs/60)).padStart(2,'0'), s = String(secs%60).padStart(2,'0');
+    cd.textContent = `${m}:${s}`;
+  }, 1000);
+
+  // Mark QR
+  const mqr = _$('markQr'); if(mqr) mqr.onclick = () => markAtt('QR Code');
+
+  // Camera
+  const video = _$('video');
+  const sc = _$('startCam');
+  if (sc) sc.onclick = async () => {
+    try {
+      _cameraStream = await navigator.mediaDevices.getUserMedia({video:true});
+      if(video) video.srcObject = _cameraStream;
+      SmartAttend.toast('Camera started');
+    } catch(e) { SmartAttend.toast('Camera unavailable — demo mode','error'); }
+  };
+  const cf = _$('captureFace');
+  if (cf) cf.onclick = () => { SmartAttend.toast('Analyzing face features...','info',1400); setTimeout(()=>markAtt('Face Recognition'),1500); };
+
+  // Fingerprint
+  const fb = _$('fingerBtn'); if(fb) fb.onclick = () => { SmartAttend.toast('Scanning fingerprint...','info',1200); setTimeout(()=>markAtt('Fingerprint'),1300); };
+
+  function markAtt(method) {
+    SmartAttend.addAttendance({subject:'Digital Signal Processing',code:'22EC41',method,status:'Present',user:user.name});
+    SmartAttend.toast(`✓ Attendance marked via ${method}`);
+    refreshLog();
+  }
+
+  function refreshLog() {
+    const list = SmartAttend.getAttendance();
+    const el = _$('recentLog'), lc = _$('logCount');
+    if(lc) lc.textContent = `${list.length} records`;
+    if (!el) return;
+    if (!list.length) { el.innerHTML='<div class="text-center text-sm text-slate-400 py-8">No attendance yet. Mark your first one!</div>'; return; }
+    el.innerHTML = list.slice(0,10).map(r => {
+      const d = new Date(r.ts);
+      const icon = r.method==='QR Code'?'fa-qrcode':r.method==='Face Recognition'?'fa-face-smile':'fa-fingerprint';
+      const color = r.method==='QR Code'?'primary':r.method==='Face Recognition'?'cyan':'violet';
+      return `<div class="flex items-start gap-3 p-3 rounded-xl bg-slate-50">
+        <div class="w-9 h-9 rounded-lg bg-${color}-100 text-${color}-600 flex items-center justify-center"><i class="fa-solid ${icon}"></i></div>
+        <div class="flex-1 min-w-0"><div class="font-semibold text-sm truncate">${r.subject}</div><div class="text-[11px] text-slate-500">${r.method} · ${d.toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'})}</div></div>
+        <span class="text-[10px] px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 font-bold">${r.status}</span>
+      </div>`;
+    }).join('');
+  }
+  refreshLog();
+}
+
+/* ============= TIMETABLE ============= */
+function initTimetable() {
+  const user = SmartAttend.getSession();
+  if (!user) { showPage('login'); return; }
+  buildSidebar(user.role==='faculty', 'timetable');
+
+  // Headers
+  SmartAttend.periodTimes.forEach((t,i) => {
+    if (i===2) return;
+    const h = _$(`hdr${i}`); if(h) h.textContent = t;
+  });
+
+  // Rows
+  const cmap = {primary:'bg-primary-100 text-primary-800 border-primary-200',cyan:'bg-cyan-100 text-cyan-800 border-cyan-200',violet:'bg-violet-100 text-violet-800 border-violet-200',emerald:'bg-emerald-100 text-emerald-800 border-emerald-200',orange:'bg-orange-100 text-orange-800 border-orange-200',rose:'bg-rose-100 text-rose-800 border-rose-200'};
+  const ttBody = _$('ttBody'); if (!ttBody) return;
+  ttBody.innerHTML = '';
+  Object.entries(SmartAttend.timetable).forEach(([day,slots]) => {
+    let row = `<tr class="border-t border-slate-100"><td class="p-3 font-display font-bold text-primary-900">${day}</td>`;
+    slots.forEach(code => {
+      if (code==='BREAK')  { row+=`<td class="p-2 bg-amber-50 text-center text-xs text-amber-700 font-semibold">☕ Break</td>`; return; }
+      if (code==='FREE')   { row+=`<td class="p-2"><div class="p-3 rounded-lg bg-slate-50 border border-slate-100 text-center text-xs text-slate-500">Free</div></td>`; return; }
+      if (code==='LAB')    { row+=`<td class="p-2"><div class="p-3 rounded-lg bg-emerald-100 border border-emerald-200 text-center text-xs font-semibold text-emerald-800">🔬 Lab Session</div></td>`; return; }
+      const s = SmartAttend.getSubject(code);
+      if (s) row+=`<td class="p-2"><div class="p-3 rounded-lg ${cmap[s.color]} border text-xs"><div class="font-bold truncate">${s.name}</div><div class="text-[10px] opacity-70 mt-1 truncate">${s.faculty}</div></div></td>`;
+      else   row+=`<td class="p-2"></td>`;
+    });
+    row += '</tr>';
+    ttBody.innerHTML += row;
+  });
+}
+
+/* ============= PRODUCTIVITY ============= */
+function initProductivity() {
+  const user = SmartAttend.getSession();
+  if (!user || user.role !== 'student') { showPage('login'); return; }
+  buildSidebar(false, 'productivity');
+
+  const un = _q('.user-name'); if(un) un.textContent = user.name;
+  const us = _q('.user-sub');  if(us) us.textContent = user.usn;
+
+  const grid = _$('actGrid');
+  function renderActs(cat='all') {
+    const items = cat==='all' ? SmartAttend.activities : SmartAttend.activities.filter(a=>a.type===cat);
+    if (!grid) return;
+    grid.innerHTML = items.map(a =>
+      `<a href="${a.url}" target="_blank" class="group bg-white rounded-2xl border border-slate-100 p-5 hover:border-${a.color}-300 hover:shadow-xl transition">
+        <div class="flex items-start justify-between"><div class="w-12 h-12 rounded-xl bg-${a.color}-100 text-${a.color}-600 flex items-center justify-center text-xl group-hover:scale-110 transition"><i class="fa-solid ${a.icon}"></i></div><span class="text-[10px] font-bold uppercase tracking-wider px-2 py-1 rounded-full bg-slate-100 text-slate-600">${a.difficulty}</span></div>
+        <h4 class="font-display font-bold mt-4">${a.title}</h4>
+        <div class="text-xs text-slate-500 mt-1">${a.type} · ${a.duration}</div>
+        <div class="mt-4 flex items-center justify-between pt-3 border-t border-slate-100"><span class="text-xs text-${a.color}-600 font-semibold">Start now <i class="fa-solid fa-arrow-right ml-1"></i></span><i class="fa-regular fa-bookmark text-slate-400"></i></div>
+      </a>`
+    ).join('');
+  }
+  renderActs();
+
+  _qsa('.filter-btn').forEach(btn => {
+    btn.onclick = () => {
+      _qsa('.filter-btn').forEach(b => { b.classList.remove('active','bg-primary-600','text-white'); b.classList.add('bg-white','border','border-slate-200'); });
+      btn.classList.add('active','bg-primary-600','text-white'); btn.classList.remove('bg-white','border','border-slate-200');
+      renderActs(btn.dataset.cat);
+    };
+  });
+}
+
+/* ============= REPORTS ============= */
+function initReports() {
+  const user = SmartAttend.getSession();
+  if (!user) { showPage('login'); return; }
+  buildSidebar(user.role==='faculty', 'reports');
+
+  // Fixed, realistic attendance data per subject
+  const totalClasses = 45;
+  const fixedPct = [96, 72, 88, 81, 94, 70];
+  const subjData = SmartAttend.subjects.map((s,i) => {
+    const pct = fixedPct[i];
+    return { ...s, pct, attended: Math.round(pct / 100 * totalClasses), total: totalClasses };
+  });
+
+  // Summary stats
+  const totalAttended = subjData.reduce((a,s) => a+s.attended, 0);
+  const grandTotal    = subjData.reduce((a,s) => a+s.total, 0);
+  const best          = subjData.reduce((a,b) => b.pct>a.pct?b:a, subjData[0]);
+  const elRA = _$('repAttended'); if(elRA) elRA.textContent = totalAttended;
+  const elRT = _$('repTotal');    if(elRT) elRT.textContent = `out of ${grandTotal} classes`;
+  const elRM = _$('repMissed');   if(elRM) elRM.textContent = grandTotal - totalAttended;
+  const elRB = _$('repBest');     if(elRB) elRB.textContent = best.name.split(' ').slice(0,2).join(' ');
+  const elRP = _$('repBestPct');  if(elRP) elRP.textContent = `${best.pct}% attendance`;
+
+  // Low attendance warning
+  const low = subjData.filter(s => s.pct < 75);
+  const alertEl = _$('lowAttendanceAlert');
+  const alertList = _$('lowAttendanceList');
+  if (alertEl && alertList) {
+    if (low.length) {
+      alertEl.classList.remove('hidden');
+      alertList.textContent = low.map(s => `${s.name} (${s.pct}%)`).join(' · ') + ' — below the 75% threshold. Attend upcoming classes to avoid shortage.';
+    } else {
+      alertEl.classList.add('hidden');
+    }
+  }
+
+  // Subject-wise horizontal bar chart
+  const sc = _$('subjChart');
+  if (sc) {
+    const ex = Chart.getChart(sc); if(ex) ex.destroy();
+    new Chart(sc, {
+      type: 'bar',
+      data: {
+        labels: subjData.map(s => s.name),
+        datasets: [{
+          label: 'Attendance %',
+          data: subjData.map(s => s.pct),
+          backgroundColor: subjData.map(s => s.pct >= 85 ? '#10b981' : s.pct >= 75 ? '#f59e0b' : '#ef4444'),
+          borderRadius: 8,
+          borderSkipped: false,
+        }, {
+          label: 'Required (75%)',
+          data: subjData.map(() => 75),
+          type: 'line',
+          borderColor: '#94a3b8',
+          borderDash: [6,4],
+          borderWidth: 1.5,
+          pointRadius: 0,
+          fill: false,
+        }]
+      },
+      options: {
+        indexAxis: 'y',
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { display: true, position: 'top', labels: { usePointStyle: true, font: { size: 11 }, padding: 14 } },
+          tooltip: { callbacks: { label: ctx => ctx.datasetIndex===0 ? ` ${ctx.raw}%` : ` ${ctx.raw}% threshold` } }
+        },
+        scales: {
+          x: { min: 0, max: 100, grid: { color: '#f8fafc' }, ticks: { callback: v => v+'%', font: { size: 11 } } },
+          y: { grid: { display: false }, ticks: { font: { size: 11 } } }
+        }
+      }
+    });
+  }
+
+  // Doughnut – method split
+  const mc = _$('methodChart');
+  if (mc) {
+    const ex = Chart.getChart(mc); if(ex) ex.destroy();
+    new Chart(mc, {
+      type: 'doughnut',
+      data: {
+        labels: ['QR Code','Face Recognition','Fingerprint'],
+        datasets: [{ data: [52,28,20], backgroundColor: ['#3b6ef5','#22d3ee','#8b5cf6'], borderWidth: 0, hoverOffset: 8 }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        cutout: '68%',
+        plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => ` ${ctx.label}: ${ctx.raw}%` } } }
+      }
+    });
+  }
+
+  // Render table rows (using inline styles so Tailwind JIT isn't needed for dynamic colors)
+  function renderTable(filter='') {
+    const tbody = _$('subjTable'); if (!tbody) return;
+    const rows = filter ? subjData.filter(s => s.name.toLowerCase().includes(filter.toLowerCase())) : subjData;
+    if (!rows.length) { tbody.innerHTML = `<tr><td colspan="6" class="p-8 text-center text-slate-400">No subjects match your search.</td></tr>`; return; }
+    tbody.innerHTML = rows.map(s => {
+      const barColor  = s.pct >= 85 ? '#10b981' : s.pct >= 75 ? '#f59e0b' : '#ef4444';
+      const badgeBg   = s.pct >= 85 ? '#d1fae5' : s.pct >= 75 ? '#fef3c7' : '#fee2e2';
+      const badgeCol  = s.pct >= 85 ? '#065f46' : s.pct >= 75 ? '#92400e' : '#991b1b';
+      const label     = s.pct >= 85 ? 'Excellent' : s.pct >= 75 ? 'Adequate' : '⚠ Low';
+      const shortfall = s.pct < 75 ? Math.ceil((0.75 * s.total - s.attended) / 0.25) : 0;
+      return `<tr class="border-t border-slate-100 table-row">
+        <td class="p-4">
+          <div class="font-semibold text-sm">${s.name}</div>
+          <div class="text-[10px] text-slate-400 mt-0.5">${s.code}</div>
+          <div style="width:100%;height:5px;background:#f1f5f9;border-radius:99px;margin-top:8px;overflow:hidden">
+            <div style="width:${s.pct}%;height:100%;background:${barColor};border-radius:99px;transition:width .6s ease"></div>
+          </div>
+        </td>
+        <td class="p-4 text-slate-600 text-xs hidden sm:table-cell">${s.faculty}</td>
+        <td class="p-4 text-center font-semibold">${s.attended}</td>
+        <td class="p-4 text-center text-slate-500">${s.total}</td>
+        <td class="p-4 text-center font-bold text-base" style="color:${barColor}">${s.pct}%</td>
+        <td class="p-4 text-center">
+          <span style="background:${badgeBg};color:${badgeCol};padding:3px 10px;border-radius:99px;font-size:10px;font-weight:700;letter-spacing:.04em;white-space:nowrap">${label}</span>
+          ${shortfall ? `<div style="color:#ef4444;font-size:10px;margin-top:4px">Need ${shortfall} more classes</div>` : ''}
+        </td>
+      </tr>`;
+    }).join('');
+  }
+  renderTable();
+
+  // Search
+  const searchEl = _$('repSearch');
+  if (searchEl) searchEl.oninput = e => renderTable(e.target.value);
+}
+
+/* ============= NOTIFICATIONS ============= */
+function initNotifications() {
+  const user = SmartAttend.getSession();
+  if (!user) { showPage('login'); return; }
+  buildSidebar(user.role==='faculty', 'notifications');
+}
+
+/* ============= BOOT ============= */
+document.addEventListener('DOMContentLoaded', () => {
+  showPage('landing');
+});
+</script>
+</body>
+</html>
 
